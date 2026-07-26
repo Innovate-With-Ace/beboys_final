@@ -9,12 +9,6 @@ export default clerkMiddleware(async (auth, req) => {
   const isStaffRoute = req.nextUrl.pathname.startsWith('/pos');
 
   const { userId, orgId, orgRole, sessionClaims } = await auth()
-  console.log('userId:', userId)
-  console.log('orgId:', orgId)
-  console.log('orgRole:', orgRole)
-
-
-  console.log("Org Role :", orgRole);
 
   if(!userId && (isAdminRoute || isStaffRoute)){
     return NextResponse.redirect(new URL('/login', req.url));
@@ -27,8 +21,6 @@ export default clerkMiddleware(async (auth, req) => {
  if (isStaffRoute && orgRole !== 'org:admin' && orgRole !== 'org:staff') {
     return NextResponse.redirect(new URL('/no-access', req.url));
   }
-
-  console.log("No Org role");
 
 
 });
