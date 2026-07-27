@@ -1,29 +1,38 @@
-import { AppSidebar } from "@/components/app-sidebar"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
+import KpiGrid from "@/components/admin/KPIGrid"
+import SalesChart from '@/components/admin/SalesChart'
+import BestSellersList from "@/components/admin/BestSellersList"
+import LowStockList from "@/components/admin/LowStockList"
+import RecentOrders from "@/components/admin/RecentOrders"
+import QuickActions from "@/components/admin/QuickActions"
 
 export default function Page() {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-          </div>
-        </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div className="aspect-video rounded-xl bg-muted/50" />
-            <div className="aspect-video rounded-xl bg-muted/50" />
-            <div className="aspect-video rounded-xl bg-muted/50" />
-          </div>
-          <div className="min-h-screen flex-1 rounded-xl bg-muted/50 md:min-h-min" />
+    <div className="">
+      <div className="mb-6">
+        <h1 className="font-heading font-semibold text-xl">Good afternoon, Beboy</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Here&apos;s how today&apos;s going</p>
+      </div>
+
+      <KpiGrid />
+
+      <div className="mt-5 grid sm:grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="col-span-2">
+          <SalesChart />
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+        <BestSellersList />
+      </div>
+
+      <div className="mt-3">
+        <LowStockList />
+      </div>
+
+      <div className="mt-3">
+        <RecentOrders />
+      </div>
+
+      <div className="mt-3">
+        <QuickActions />
+      </div>
+    </div>
   )
 }
