@@ -1,4 +1,9 @@
-import { TooltipProvider } from "@/components/ui/tooltip"
+import { AppSidebar } from "@/components/app-sidebar"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
 
 export default function AdminLayout({
   children,
@@ -6,10 +11,18 @@ export default function AdminLayout({
   children: React.ReactNode
 }>) {
   return (
-    <div className="min-h-full flex flex-col">
-    <TooltipProvider>
-      {children}
-    </TooltipProvider>
-    </div>
+   <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b border-bg-muted">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+          </div>
+        </header>
+        <div className="flex flex-1 flex-col gap-4 p-4  bg-bg">
+          {children}
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

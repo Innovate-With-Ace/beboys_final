@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
 import { Nunito, Inter } from 'next/font/google'
+import { TooltipProvider } from "@/components/ui/tooltip"
+
 import './globals.css'
 
 const nunito = Nunito({
@@ -27,7 +29,9 @@ export default function RootLayout({
     <html lang="en" className={`${nunito.variable} ${inter.variable} h-full antialiased bg-bg-muted`}>
       <body className="min-h-full flex flex-col">
         <ClerkProvider>
-          {children}
+              <TooltipProvider>
+                {children}
+              </TooltipProvider>
         </ClerkProvider>
       </body>
     </html>

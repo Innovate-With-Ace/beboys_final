@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 
 import {
   DropdownMenu,
@@ -18,7 +19,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { ChevronsUpDownIcon, PlusIcon } from "lucide-react"
+import { ChevronsUpDownIcon, PlusIcon, StoreIcon } from "lucide-react"
 
 export function TeamSwitcher({
   teams,
@@ -82,12 +83,12 @@ export function TeamSwitcher({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem className="gap-2 p-2">
-                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                  <PlusIcon className="size-4" />
-                </div>
-                <div className="font-medium text-muted-foreground">
-                  Add team
-                </div>
+                <Link href="/pos" className="flex flex-row gap-2">
+                  <div className="flex size-6 items-center justify-center rounded-md border bg-brand-primary/10 text-brand-primary">
+                    <StoreIcon className="size-4" />
+                  </div>
+                  <div className="font-medium">Go to POS</div>
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
