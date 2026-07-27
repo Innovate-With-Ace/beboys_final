@@ -5,20 +5,7 @@ import { useEffect, useState } from 'react'
 import { useDishStore } from '@/stores/DishStore'
 import { Soup } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-
-const mockDishes = [
-  { id: '1', name: 'Adobo', price: 60, servings: 8 },
-  { id: '2', name: 'Sinigang', price: 65, servings: 2 },
-  { id: '3', name: 'Pancit', price: 55, servings: 0 },
-  { id: '4', name: 'Rice', price: 15, servings: 20 },
-  { id: '5', name: 'Iced tea', price: 20, servings: 15 },
-  { id: '6', name: 'Lumpia', price: 10, servings: 30 },
-  { id: '7', name: 'Sisig', price: 75, servings: 5 },
-  { id: '8', name: 'Kare-kare', price: 85, servings: 1 },
-  { id: '9', name: 'Halo-halo', price: 45, servings: 0 },
-  { id: '10', name: 'Bottled water', price: 15, servings: 25 },
-];
-
+import { mockDishes } from '@/data/dishes'
 
 const SetupPage = () => {
     const router = useRouter();
