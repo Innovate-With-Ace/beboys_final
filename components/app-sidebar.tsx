@@ -60,11 +60,6 @@ const data = {
       icon: <SoupIcon />,
     },
     {
-      title: "Ingredients",
-      url: "/admin/ingredients",
-      icon: <CarrotIcon />,
-    },
-    {
       title: "Staff",
       url: "/admin/staff",
       icon: <UsersIcon />,

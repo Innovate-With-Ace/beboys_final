@@ -52,6 +52,7 @@ export function LoginForm({
   };
 
   const onSubmit = async (data : LoginPayload) => {
+    console.log("Logging in");
     setError(null);
     const {error} = await signIn.password({identifier : data.email, password : data.password});
 
