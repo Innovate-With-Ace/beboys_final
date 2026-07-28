@@ -13,10 +13,10 @@ type InventoryStoreType = {
 export const useInventoryStore = create<InventoryStoreType>((set, get) => ({
     ingredients : [],
     setIngredients : (ing) => {
-        return;
+        return set({ingredients : ing});
     },
     addIngredient  : (ing) => {
-        return;
+        set({ingredients : [...get().ingredients, ing]});
     },
     removeIngredient : (ing) => {
         return;
