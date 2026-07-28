@@ -25,6 +25,14 @@ import { useDishEditorStore } from "@/stores/DishEditorStore"
 import DishTable from "@/components/admin/dishes/DishTable"
 import Image from "next/image"
 import { mockIngredients } from "@/data/ingredients"
+import { useForm, Controller } from 'react-hook-form'
+
+type DishFormValues = {
+  name: string
+  price: number
+  servings: number
+  isAvailable: boolean
+}
 
 type RecipeRow = {
   ingredientId: string
@@ -32,10 +40,19 @@ type RecipeRow = {
 }
 
 const Page = () => {
-  const { setDishes } = useDishStore()
+  const { setDishes, dishes } = useDishStore()
   const { isOpen, close, selectedDish, openForCreate } = useDishEditorStore()
   const [layout, setLayout] = useState<'grid' | 'table'>('grid')
   const { ingredients, setIngredients } = useInventoryStore()
+
+  const { control, handleSubmit, reset } = useForm<DishFormValues>({
+  defaultValues: {
+    name: '',
+    price: 0,
+    servings: 0,
+    isAvailable: true,
+  },
+})
 
   // filter bar category
   const [filterCategoryId, setFilterCategoryId] = useState<string>()
@@ -45,6 +62,15 @@ const Page = () => {
 
   // form recipe rows — resets to match selectedDish whenever the sheet opens
   const [recipeRows, setRecipeRows] = useState<RecipeRow[]>([])
+
+  useEffect(() => {
+  reset({
+    name: selectedDish?.name ?? '',
+    price: selectedDish?.price ?? 0,
+    servings: selectedDish?.servings_left ?? 0,
+    isAvailable: selectedDish?.isAvailable ?? true,
+  })
+}, [selectedDish, isOpen])
 
   useEffect(() => {
     setDishes(mockDishes)
@@ -73,6 +99,27 @@ const Page = () => {
     setRecipeRows((prev) => prev.filter((_, i) => i !== index))
   }
 
+  const onSubmit = (data: DishFormValues) => {
+  const newDish: Dish = {
+    id: selectedDish?.id ?? crypto.randomUUID(),
+    name: data.name,
+    price: data.price,
+    servings: data.servings,
+    servings_left: data.servings,
+    category_id: formCategoryId ?? '',
+    ingredients: recipeRows,
+    isAvailable: data.isAvailable,
+    image: selectedDish?.image,
+  }
+
+  if (selectedDish) {
+    setDishes(dishes.map((d) => (d.id === newDish.id ? newDish : d)))
+  } else {
+    setDishes([...dishes, newDish])
+  }
+
+  close()
+}
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -121,11 +168,7 @@ const Page = () => {
               </SheetDescription>
             </SheetHeader>
 
-            <form
-              action="#"
-              encType="multipart/form-data"
-              className="flex-1 overflow-y-auto px-5 py-5 space-y-5"
-            >
+           <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-5 py-5 space-y-5" id="dish-form">
               {/* Image upload */}
               <div className="border-2 border-border w-full aspect-video border-dashed rounded-md overflow-hidden hover:border-brand-primary/50 hover:bg-brand-primary/5 transition-colors">
                 {!selectedDish || !selectedDish.image ? (
@@ -147,47 +190,63 @@ const Page = () => {
               </div>
 
               {/* Name */}
-              <div className="space-y-1.5">
+             <div className="space-y-1.5">
                 <Label htmlFor="name">Dish name</Label>
-                <Input
-                  id="name"
-                  placeholder="e.g. Chicken Adobo"
-                  defaultValue={selectedDish?.name ?? ''}
-                  key={selectedDish?.id ?? 'new'}
+                <Controller
+                  control={control}
+                  name="name"
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <Input id="name" placeholder="e.g. Chicken Adobo" {...field} />
+                  )}
                 />
               </div>
 
               {/* Price + Servings */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="price">Price</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                      ₱
-                    </span>
-                    <Input
-                      id="price"
-                      type="number"
-                      placeholder="0.00"
-                      className="pl-7"
-                      defaultValue={selectedDish?.price ?? ''}
-                      min={0}
-                      key={`price-${selectedDish?.id ?? 'new'}`}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="price">Price</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₱</span>
+                      <Controller
+                        control={control}
+                        name="price"
+                        rules={{ required: true, min: 0 }}
+                        render={({ field: { onChange, value, ...rest } }) => (
+                          <Input
+                            id="price"
+                            type="number"
+                            placeholder="0.00"
+                            className="pl-7"
+                            min={0}
+                            value={value}
+                            onChange={(e) => onChange(Number(e.target.value))}
+                            {...rest}
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="servings">Servings</Label>
+                    <Controller
+                      control={control}
+                      name="servings"
+                      rules={{ required: true, min: 0 }}
+                      render={({ field: { onChange, value, ...rest } }) => (
+                        <Input
+                          id="servings"
+                          type="number"
+                          placeholder="0"
+                          value={value}
+                          onChange={(e) => onChange(Number(e.target.value))}
+                          {...rest}
+                        />
+                      )}
                     />
                   </div>
                 </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="servings">Servings</Label>
-                  <Input
-                    id="servings"
-                    type="number"
-                    placeholder="0"
-                    defaultValue={selectedDish?.servings_left ?? 0}
-                    key={`servings-${selectedDish?.id ?? 'new'}`}
-                  />
-                </div>
-              </div>
 
               {/* Category */}
               <div className="space-y-1.5">
@@ -261,28 +320,34 @@ const Page = () => {
               <div className="flex items-center justify-between rounded-md border border-border px-3 py-2.5">
                 <div>
                   <p className="text-sm font-medium">Available</p>
-                  <p className="text-xs text-muted-foreground">
-                    Customers can order this dish
-                  </p>
+                  <p className="text-xs text-muted-foreground">Customers can order this dish</p>
                 </div>
-                <Switch
-                  defaultChecked={selectedDish?.isAvailable ?? true}
-                  key={`switch-${selectedDish?.id ?? 'new'}`}
-                  className="data-[state=checked]:bg-brand-primary!"
+                <Controller
+                  control={control}
+                  name="isAvailable"
+                  render={({ field: { value, onChange } }) => (
+                    <Switch
+                      checked={value}
+                      onCheckedChange={onChange}
+                      className="data-[state=checked]:bg-brand-primary!"
+                    />
+                  )}
                 />
               </div>
             </form>
 
             <SheetFooter className="border-t border-border px-5 py-4 flex-row gap-2">
-              <SheetClose asChild>
-                <Button variant="outline" className="flex-1">
-                  Cancel
+                <SheetClose>
+                  <Button variant="outline" className="flex-1">Cancel</Button>
+                </SheetClose>
+                <Button
+                  type="submit"
+                  form="dish-form" // see note below
+                  className="flex-1 bg-brand-primary hover:bg-brand-primary/90 text-white"
+                >
+                  Save dish
                 </Button>
-              </SheetClose>
-              <Button className="flex-1 bg-brand-primary hover:bg-brand-primary/90 text-white">
-                Save dish
-              </Button>
-            </SheetFooter>
+              </SheetFooter>
           </SheetContent>
         </Sheet>
       </main>
