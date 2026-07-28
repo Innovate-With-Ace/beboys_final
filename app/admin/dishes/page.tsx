@@ -7,6 +7,7 @@ import DishGrid from "@/components/admin/dishes/DishGrid"
 import { useEffect, useState } from "react"
 import { useDishStore } from "@/stores/DishStore"
 import { mockDishes } from "@/data/dishes"
+import { useInventoryStore } from "@/stores/InventoryStore"
 import {
   Sheet,
   SheetContent,
@@ -19,32 +20,62 @@ import {
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import { ImageUp, Plus } from "lucide-react"
+import { ImageUp, Plus, X } from "lucide-react"
 import { useDishEditorStore } from "@/stores/DishEditorStore"
 import DishTable from "@/components/admin/dishes/DishTable"
 import Image from "next/image"
+import { mockIngredients } from "@/data/ingredients"
+
+type RecipeRow = {
+  ingredientId: string
+  quantity: number
+}
 
 const Page = () => {
   const { setDishes } = useDishStore()
   const { isOpen, close, selectedDish, openForCreate } = useDishEditorStore()
-  const [layout, setLayout] = useState<'grid' | 'table'>('grid');
+  const [layout, setLayout] = useState<'grid' | 'table'>('grid')
+  const { ingredients, setIngredients } = useInventoryStore()
+
   // filter bar category
-  const [filterCategoryId, setFilterCategoryId] = useState<string>();
+  const [filterCategoryId, setFilterCategoryId] = useState<string>()
 
   // form category — resets to match selectedDish whenever the sheet opens
   const [formCategoryId, setFormCategoryId] = useState<string>()
 
+  // form recipe rows — resets to match selectedDish whenever the sheet opens
+  const [recipeRows, setRecipeRows] = useState<RecipeRow[]>([])
+
   useEffect(() => {
     setDishes(mockDishes)
+    setIngredients(mockIngredients)
   }, [])
 
   useEffect(() => {
     setFormCategoryId(selectedDish?.category_id)
   }, [selectedDish, isOpen])
 
+  useEffect(() => {
+    setRecipeRows(selectedDish?.ingredients ?? [])
+  }, [selectedDish, isOpen])
+
+  const addRecipeRow = () => {
+    setRecipeRows((prev) => [...prev, { ingredientId: '', quantity: 0 }])
+  }
+
+  const updateRecipeRow = (index: number, updates: Partial<RecipeRow>) => {
+    setRecipeRows((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, ...updates } : row))
+    )
+  }
+
+  const removeRecipeRow = (index: number) => {
+    setRecipeRows((prev) => prev.filter((_, i) => i !== index))
+  }
+
   return (
     <div>
-     <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-heading font-semibold text-xl text-brand-secondary">Dishes</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Dish Management</p>
@@ -72,18 +103,12 @@ const Page = () => {
             />
           </div>
 
-          <TableCartTabs value={layout} onValueChange={(val) => setLayout(val as 'grid' | 'table')}/>
+          <TableCartTabs value={layout} onValueChange={(val) => setLayout(val as 'grid' | 'table')} />
         </div>
       </div>
 
       <main className="mt-4">
-        {
-          layout === 'grid' ? (
-            <DishGrid />
-          ) : (
-            <DishTable/>
-          )
-        }
+        {layout === 'grid' ? <DishGrid /> : <DishTable />}
 
         <Sheet open={isOpen} onOpenChange={(open) => !open && close()}>
           <SheetContent side="right" className="bg-white flex flex-col p-0 gap-0">
@@ -171,6 +196,65 @@ const Page = () => {
                   selectedCategoryId={formCategoryId}
                   onSelectCategory={setFormCategoryId}
                 />
+              </div>
+
+              {/* Ingredients / recipe builder */}
+              <div className="space-y-1.5">
+                <Label>Ingredients</Label>
+
+                <div className="flex flex-col gap-2">
+                  {recipeRows.map((row, index) => {
+                    const ingredient = ingredients.find((i) => i.id === row.ingredientId)
+
+                    return (
+                      <div key={index} className="flex items-center gap-2">
+                        <select
+                          value={row.ingredientId}
+                          onChange={(e) => updateRecipeRow(index, { ingredientId: e.target.value })}
+                          className="flex-1 h-9 rounded-md border border-border bg-bg px-2.5 text-sm"
+                        >
+                          <option value="" disabled>Select ingredient</option>
+                          {ingredients.map((ing) => (
+                            <option key={ing.id} value={ing.id}>{ing.name}</option>
+                          ))}
+                        </select>
+
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={row.quantity || ''}
+                          onChange={(e) => updateRecipeRow(index, { quantity: Number(e.target.value) })}
+                          className="w-20 text-center"
+                          min={0}
+                          step="any"
+                        />
+
+                        <span className="text-xs text-muted-foreground w-6 shrink-0">
+                          {ingredient?.unit ?? ''}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => removeRecipeRow(index)}
+                          className="text-muted-foreground hover:text-error shrink-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addRecipeRow}
+                  className="w-full mt-1"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add ingredient
+                </Button>
               </div>
 
               {/* Availability */}

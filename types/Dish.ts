@@ -1,4 +1,8 @@
-import { Ingredient } from "./Ingredients";
+type DishIngredient = {
+    id : string;
+    quantity : number
+}
+
 
 export type Dish = {
     id : string;
@@ -9,7 +13,7 @@ export type Dish = {
     image? : string;
     category_id : string,
     // For now this is optional but we will require it sooner
-    ingredients? : Ingredient[]
+    ingredients? : DishIngredient[]
     isAvailable : boolean
 }
 
