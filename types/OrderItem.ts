@@ -1,6 +1,6 @@
-export type OrderItems = {
-    id : string;
-    name : string;
-    quantity : number;
-    price : number;
+export type OrderItem = {
+  dish_id: string       
+  name: string          
+  price: number        
+  quantity: number
 }

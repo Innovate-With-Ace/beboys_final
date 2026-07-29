@@ -1,15 +1,13 @@
+import { OrderItem } from "./OrderItem"
 
-import { OrderItems } from "./OrderItem";
-
-export type orderStatus = "pending" | "preparing" | "cancelled" | "completed";
+export type OrderStatus = "pending" | "preparing" | "cancelled" | "completed"
 
 export type Order = {
-    id : string;
-    items : OrderItems[];
-    cashier : string;
-    total : number;
-    status : orderStatus,
-    created_at : string;
+  id: string
+  items: OrderItem[]
+  cashier_id: string
+  total: number
+  status: OrderStatus
+  created_at: string
+  updated_at: string
 }
-
-

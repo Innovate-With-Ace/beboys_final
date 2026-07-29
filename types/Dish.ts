@@ -1,8 +1,7 @@
 type DishIngredient = {
-    id : string;
-    quantity : number
+    ingredient_id: string   // not ingredientId
+    quantity: number
 }
-
 
 export type Dish = {
     id : string;
@@ -14,6 +13,6 @@ export type Dish = {
     category_id : string,
     // For now this is optional but we will require it sooner
     ingredients? : DishIngredient[]
-    isAvailable : boolean
+    is_available : boolean
 }
 

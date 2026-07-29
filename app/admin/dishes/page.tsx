@@ -26,16 +26,17 @@ import DishTable from "@/components/admin/dishes/DishTable"
 import Image from "next/image"
 import { mockIngredients } from "@/data/ingredients"
 import { useForm, Controller } from 'react-hook-form'
+import { Dish } from "@/types/Dish"
 
 type DishFormValues = {
   name: string
   price: number
   servings: number
-  isAvailable: boolean
+  is_available: boolean
 }
 
 type RecipeRow = {
-  ingredientId: string
+  ingredient_id: string
   quantity: number
 }
 
@@ -50,7 +51,7 @@ const Page = () => {
     name: '',
     price: 0,
     servings: 0,
-    isAvailable: true,
+    is_available: true,
   },
 })
 
@@ -68,7 +69,7 @@ const Page = () => {
     name: selectedDish?.name ?? '',
     price: selectedDish?.price ?? 0,
     servings: selectedDish?.servings_left ?? 0,
-    isAvailable: selectedDish?.isAvailable ?? true,
+    is_available: selectedDish?.is_available ?? true,
   })
 }, [selectedDish, isOpen])
 
@@ -86,7 +87,7 @@ const Page = () => {
   }, [selectedDish, isOpen])
 
   const addRecipeRow = () => {
-    setRecipeRows((prev) => [...prev, { ingredientId: '', quantity: 0 }])
+    setRecipeRows((prev) => [...prev, { ingredient_id: '', quantity: 0 }])
   }
 
   const updateRecipeRow = (index: number, updates: Partial<RecipeRow>) => {
@@ -101,16 +102,16 @@ const Page = () => {
 
   const onSubmit = (data: DishFormValues) => {
   const newDish: Dish = {
-    id: selectedDish?.id ?? crypto.randomUUID(),
-    name: data.name,
-    price: data.price,
-    servings: data.servings,
-    servings_left: data.servings,
-    category_id: formCategoryId ?? '',
-    ingredients: recipeRows,
-    isAvailable: data.isAvailable,
-    image: selectedDish?.image,
-  }
+        id: selectedDish?.id ?? crypto.randomUUID(),
+        name: data.name,
+        price: data.price,
+        servings: data.servings,
+        servings_left: data.servings,
+        category_id: formCategoryId ?? '',
+        ingredients: recipeRows,
+        is_available: data.is_available,
+        image: selectedDish?.image,
+      }
 
   if (selectedDish) {
     setDishes(dishes.map((d) => (d.id === newDish.id ? newDish : d)))
@@ -263,13 +264,13 @@ const Page = () => {
 
                 <div className="flex flex-col gap-2">
                   {recipeRows.map((row, index) => {
-                    const ingredient = ingredients.find((i) => i.id === row.ingredientId)
+                    const ingredient = ingredients.find((i) => i.id === row.ingredient_id)
 
                     return (
                       <div key={index} className="flex items-center gap-2">
                         <select
-                          value={row.ingredientId}
-                          onChange={(e) => updateRecipeRow(index, { ingredientId: e.target.value })}
+                          value={row.ingredient_id}
+                          onChange={(e) => updateRecipeRow(index, { ingredient_id: e.target.value })}
                           className="flex-1 h-9 rounded-md border border-border bg-bg px-2.5 text-sm"
                         >
                           <option value="" disabled>Select ingredient</option>
@@ -324,7 +325,7 @@ const Page = () => {
                 </div>
                 <Controller
                   control={control}
-                  name="isAvailable"
+                  name="is_available"
                   render={({ field: { value, onChange } }) => (
                     <Switch
                       checked={value}
