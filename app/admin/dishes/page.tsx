@@ -80,11 +80,10 @@ const Page = () => {
 
   useEffect(() => {
     setFormCategoryId(selectedDish?.category_id)
+    setRecipeRows(selectedDish?.ingredients ?? [])
+
   }, [selectedDish, isOpen])
 
-  useEffect(() => {
-    setRecipeRows(selectedDish?.ingredients ?? [])
-  }, [selectedDish, isOpen])
 
   const addRecipeRow = () => {
     setRecipeRows((prev) => [...prev, { ingredient_id: '', quantity: 0 }])

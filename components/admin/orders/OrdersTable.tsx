@@ -6,14 +6,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Order, orderStatus } from "@/types/Order"
+import { Order, OrderStatus } from "@/types/Order"
 import { Button } from "@/components/ui/button"
 
 type Props = {
   orders: Order[]
 }
 
-const statusConfig: Record<orderStatus, { className: string; label: string }> = {
+const statusConfig: Record<OrderStatus, { className: string; label: string }> = {
   cancelled: {
     className: "inline-block bg-error/10 px-2.5 py-1 rounded-md text-error text-xs text-center font-medium",
     label: "Cancelled",
@@ -67,7 +67,7 @@ const OrdersTable = ({ orders }: Props) => {
                 {order.items.map((i) => `${i.name} x${i.quantity}`).join(", ")}
               </TableCell>
 
-              <TableCell className="text-center">{order.cashier}</TableCell>
+              <TableCell className="text-center">{order.cashier_id}</TableCell>
 
               <TableCell className="text-center">₱{totalAmount.toFixed(2)}</TableCell>
 
