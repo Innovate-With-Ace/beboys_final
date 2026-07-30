@@ -10,6 +10,7 @@ import IngredientDialog from "@/components/admin/inventory/IngredientDialog";
 import fetchApi from "@/lib/api";
 import { Ingredient } from "@/types/Ingredients";
 import { useQuery } from "@tanstack/react-query";
+import { useIngredients } from "@/hooks/useIngredients";
 
 type FilterStatus = "all" | "low" | "critical" | "in-stock";
 
@@ -18,11 +19,7 @@ const Page = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterStatus>("all");
 
-  const { data: ingredients, isLoading } = useQuery({
-    queryKey: ["ingredients"],
-    queryFn: () =>
-      fetchApi<Ingredient[]>("/api/ingredients", { method: "GET" }),
-  });
+  const { data: ingredients = [], isLoading } = useIngredients();
 
   // Client-side search and stock filter logic
   const filteredIngredients = useMemo(() => {

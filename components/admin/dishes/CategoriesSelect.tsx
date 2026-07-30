@@ -1,84 +1,74 @@
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Categories } from "@/types/Categories"
+"use client";
 
-export const mockCategories: Categories[] = [
-  {
-    id: '05a87e23-b890-4580-a09a-a95429fdca84',
-    label: 'Main Dishes',
-    created_at: '2025-01-10T08:00:00Z',
-    updated_at: '2025-01-10T08:00:00Z',
-  },
-  {
-    id: '2',
-    label: 'Soups',
-    created_at: '2025-01-10T08:05:00Z',
-    updated_at: '2025-01-10T08:05:00Z',
-  },
-  {
-    id: '3',
-    label: 'Noodles',
-    created_at: '2025-01-10T08:10:00Z',
-    updated_at: '2025-02-15T10:30:00Z',
-  },
-  {
-    id: '4',
-    label: 'Rice & Sides',
-    created_at: '2025-01-10T08:15:00Z',
-    updated_at: '2025-01-10T08:15:00Z',
-  },
-  {
-    id: '5',
-    label: 'Beverages',
-    created_at: '2025-01-10T08:20:00Z',
-    updated_at: '2025-03-01T14:00:00Z',
-  },
-  {
-    id: '6',
-    label: 'Appetizers',
-    created_at: '2025-01-12T09:00:00Z',
-    updated_at: '2025-01-12T09:00:00Z',
-  },
-  {
-    id: '7',
-    label: 'Desserts',
-    created_at: '2025-01-12T09:10:00Z',
-    updated_at: '2025-01-12T09:10:00Z',
-  },
-]
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { FolderCog } from "lucide-react";
+import { Categories } from "@/types/Categories";
+import { CategoryManagerDialog } from "./CategoryManagerDialog";
 
 type Props = {
-  selectedCategoryId?: string
-  onSelectCategory?: (categoryId: string) => void
-}
+  selectedCategoryId?: string;
+  onSelectCategory?: (categoryId: string) => void;
+  categories?: Categories[];
+  showAllOption?: boolean; // Set to true for filters, false for dish forms
+  onAddCategory?: (label: string) => void;
+  onRenameCategory?: (id: string, label: string) => void;
+  onDeleteCategory?: (id: string) => void;
+};
 
-const CategoriesSelect = ({ selectedCategoryId, onSelectCategory }: Props) => {
+const CategoriesSelect = ({
+  selectedCategoryId,
+  onSelectCategory,
+  categories = [],
+  showAllOption = false,
+  onAddCategory,
+  onRenameCategory,
+  onDeleteCategory,
+}: Props) => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   return (
-    <Select
-      value={selectedCategoryId}
-      onValueChange={onSelectCategory}
-    >
-      <SelectTrigger className="w-full">
-        <SelectValue placeholder="Categories" />
-      </SelectTrigger>
+    <div className="flex items-center gap-1.5 w-full">
+      {/* Native Select styled to match shadcn/ui inputs */}
+      <select
+        value={selectedCategoryId ?? ""}
+        onChange={(e) => onSelectCategory?.(e.target.value)}
+        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-2xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 text-foreground truncate cursor-pointer"
+      >
+        <option value="" disabled={!showAllOption}>
+          {showAllOption ? "All Categories" : "Select a category"}
+        </option>
+        {categories.map((cat) => (
+          <option key={cat.id} value={cat.id}>
+            {cat.label}
+          </option>
+        ))}
+      </select>
 
-      <SelectContent>
-        <SelectGroup>
-          {mockCategories.map((cat) => (
-            <SelectItem key={cat.id} value={cat.id} label={cat.label}>
-              {cat.label}
-            </SelectItem>
-          ))}
-        </SelectGroup>
-      </SelectContent>
-    </Select>
-  )
-}
+      {/* Manage Button */}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => setDialogOpen(true)}
+        className="h-9 px-2.5 text-xs gap-1.5 shrink-0"
+        title="Manage Categories"
+      >
+        <FolderCog className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="hidden sm:inline">Manage</span>
+      </Button>
 
-export default CategoriesSelect
+      {/* Category Manager Dialog */}
+      <CategoryManagerDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        categories={categories}
+        onAdd={(label) => onAddCategory?.(label)}
+        onRename={(id, label) => onRenameCategory?.(id, label)}
+        onDelete={(id) => onDeleteCategory?.(id)}
+      />
+    </div>
+  );
+};
+
+export default CategoriesSelect;
