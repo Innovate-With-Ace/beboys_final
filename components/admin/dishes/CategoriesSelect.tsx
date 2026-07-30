@@ -10,7 +10,7 @@ import { Categories } from "@/types/Categories"
 
 export const mockCategories: Categories[] = [
   {
-    id: '1',
+    id: '05a87e23-b890-4580-a09a-a95429fdca84',
     label: 'Main Dishes',
     created_at: '2025-01-10T08:00:00Z',
     updated_at: '2025-01-10T08:00:00Z',

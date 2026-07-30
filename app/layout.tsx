@@ -4,6 +4,7 @@ import { Nunito, Inter } from 'next/font/google'
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
+import QueryProvider from '@/providers/QueryProvider'
 
 const nunito = Nunito({
 variable: '--font-nunito',
@@ -30,7 +31,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ClerkProvider>
               <TooltipProvider>
+                <QueryProvider>
                 {children}
+                </QueryProvider>
                 <Toaster
                 theme='light'
                   toastOptions={{
