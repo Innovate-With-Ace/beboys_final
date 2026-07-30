@@ -27,6 +27,7 @@ import Image from "next/image"
 import { mockIngredients } from "@/data/ingredients"
 import { useForm, Controller } from 'react-hook-form'
 import { Dish } from "@/types/Dish"
+import fetchApi from "@/lib/api"
 
 type DishFormValues = {
   name: string
@@ -71,18 +72,15 @@ const Page = () => {
     servings: selectedDish?.servings_left ?? 0,
     is_available: selectedDish?.is_available ?? true,
   })
-}, [selectedDish, isOpen])
+
+    setFormCategoryId(selectedDish?.category_id)
+    setRecipeRows(selectedDish?.ingredients ?? [])
+}, [selectedDish, isOpen]);
 
   useEffect(() => {
     setDishes(mockDishes)
     setIngredients(mockIngredients)
   }, [])
-
-  useEffect(() => {
-    setFormCategoryId(selectedDish?.category_id)
-    setRecipeRows(selectedDish?.ingredients ?? [])
-
-  }, [selectedDish, isOpen])
 
 
   const addRecipeRow = () => {
@@ -99,8 +97,8 @@ const Page = () => {
     setRecipeRows((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const onSubmit = (data: DishFormValues) => {
-  const newDish: Dish = {
+  const onSubmit = async (data: DishFormValues) => {
+    const newDish: Dish = {
         id: selectedDish?.id ?? crypto.randomUUID(),
         name: data.name,
         price: data.price,
@@ -115,7 +113,14 @@ const Page = () => {
   if (selectedDish) {
     setDishes(dishes.map((d) => (d.id === newDish.id ? newDish : d)))
   } else {
-    setDishes([...dishes, newDish])
+    try {
+  const created = await fetchApi<Dish>('/api/dishes', { body: JSON.stringify(newDish), method: "POST" })
+  setDishes([...dishes, created]) 
+} catch (err) {
+  // show an error, don't update local state
+  // We will fix error states sooners
+}
+
   }
 
   close()

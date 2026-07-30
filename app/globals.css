@@ -23,6 +23,32 @@
   --color-info: #3b82f6;
 }
 
+[data-sonner-toast][data-type="success"] {
+  background: color-mix(in oklab, var(--color-success) 12%, white);
+  border: 1px solid color-mix(in oklab, var(--color-success) 30%, transparent);
+  color: var(--color-success);
+}
+
+[data-sonner-toast][data-type="error"] {
+  background: color-mix(in oklab, var(--color-error) 12%, white);
+  border: 1px solid color-mix(in oklab, var(--color-error) 30%, transparent);
+  color: var(--color-error);
+}
+
+[data-sonner-toast][data-type="warning"] {
+  background: color-mix(in oklab, var(--color-warning) 12%, white);
+  border: 1px solid color-mix(in oklab, var(--color-warning) 30%, transparent);
+  color: var(--color-warning);
+}
+
+[data-sonner-toast][data-type="info"] {
+  background: color-mix(in oklab, var(--color-info) 12%, white);
+  border: 1px solid color-mix(in oklab, var(--color-info) 30%, transparent);
+  color: var(--color-info);
+}
+
+
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

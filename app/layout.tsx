@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
 import { Nunito, Inter } from 'next/font/google'
 import { TooltipProvider } from "@/components/ui/tooltip"
-
+import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
 const nunito = Nunito({
@@ -31,6 +31,18 @@ export default function RootLayout({
         <ClerkProvider>
               <TooltipProvider>
                 {children}
+                <Toaster
+                theme='light'
+                  toastOptions={{
+                    classNames: {
+                      title: 'font-medium text-sm',
+                      description: 'text-xs opacity-90',
+                      icon: 'shrink-0',
+                    },
+                  }}
+                  position='top-right'
+                  richColors
+                />
               </TooltipProvider>
         </ClerkProvider>
       </body>
