@@ -35,12 +35,15 @@ import { useForm, Controller } from "react-hook-form";
 import { Dish } from "@/types/Dish";
 import fetchApi from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { RecipeBuilder } from "@/components/admin/dishes/RecipeBuilder";
+import { useDishes } from "@/hooks/useDishes";
 
 type DishFormValues = {
   name: string;
   price: number;
   servings: number;
   is_available: boolean;
+  category_id: string;
 };
 
 type RecipeRow = {
@@ -63,10 +66,7 @@ const Page = () => {
     },
   });
 
-  const { data: dishes, isLoading } = useQuery({
-    queryKey: ["dishes"],
-    queryFn: () => fetchApi<Dish[]>("/api/dishes", { method: "GET" }),
-  });
+  const { data: dishes, isLoading } = useDishes();
 
   const createDish = useMutation({
     mutationFn: (newDish: Dish) =>
@@ -179,7 +179,7 @@ const Page = () => {
   const isSaving = createDish.isPending || updateDish.isPending;
 
   return (
-    <div className="max-w-7xl p-4">
+    <div className="max-w-7xl space-y-6 p-4">
       {/* Top Bar Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border/60">
         <div>
@@ -214,6 +214,7 @@ const Page = () => {
         <div className="flex items-center gap-2.5">
           <div className="w-48 sm:w-56">
             <CategoriesSelect
+              showAllOption
               selectedCategoryId={filterCategoryId}
               onSelectCategory={setFilterCategoryId}
             />
@@ -231,7 +232,7 @@ const Page = () => {
       {/* Main Grid/Table Views */}
       <main className="min-h-[400px] mt-4">
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-pulse">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-pulse">
             {[...Array(4)].map((_, i) => (
               <div
                 key={i}
@@ -248,7 +249,8 @@ const Page = () => {
               No dishes found
             </h3>
             <p className="text-sm text-muted-foreground max-w-sm mt-1 mb-4">
-              Your menu is currently empty. Add your first item to start accepting orders.
+              Your menu is currently empty. Add your first item to start
+              accepting orders.
             </p>
             <Button onClick={openForCreate} variant="outline" size="sm">
               <Plus className="h-4 w-4 mr-1.5" />
@@ -258,7 +260,7 @@ const Page = () => {
         ) : layout === "grid" ? (
           <DishGrid dishes={dishes} />
         ) : (
-          <DishTable />
+          <DishTable dishes={dishes} />
         )}
 
         {/* Drawer Sheet */}
@@ -396,91 +398,27 @@ const Page = () => {
               {/* Category */}
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Category</Label>
-                <CategoriesSelect
-                  selectedCategoryId={formCategoryId}
-                  onSelectCategory={setFormCategoryId}
+                <Controller
+                  control={control}
+                  name="category_id"
+                  render={({ field }) => (
+                    <CategoriesSelect
+                      selectedCategoryId={field.value}
+                      onSelectCategory={field.onChange}
+                      categories={categories}
+                    />
+                  )}
                 />
               </div>
 
               {/* Recipe builder section */}
-              <div className="space-y-2 pt-1 border-t border-border/50">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold">Ingredients</Label>
-                  <span className="text-[11px] text-muted-foreground">
-                    Recipe Breakdown
-                  </span>
-                </div>
-
-                <div className="space-y-2">
-                  {recipeRows.map((row, index) => {
-                    const ingredient = ingredients.find(
-                      (i) => i.id === row.ingredient_id,
-                    );
-
-                    return (
-                      <div key={index} className="flex items-center gap-2">
-                        <select
-                          value={row.ingredient_id}
-                          onChange={(e) =>
-                            updateRecipeRow(index, {
-                              ingredient_id: e.target.value,
-                            })
-                          }
-                          className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-                        >
-                          <option value="" disabled>
-                            Select ingredient
-                          </option>
-                          {ingredients.map((ing) => (
-                            <option key={ing.id} value={ing.id}>
-                              {ing.name}
-                            </option>
-                          ))}
-                        </select>
-
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          value={row.quantity || ""}
-                          onChange={(e) =>
-                            updateRecipeRow(index, {
-                              quantity: Number(e.target.value),
-                            })
-                          }
-                          className="w-20 text-center h-9 text-xs"
-                          min={0}
-                          step="any"
-                        />
-
-                        <span className="text-xs text-muted-foreground w-7 shrink-0 truncate">
-                          {ingredient?.unit ?? ""}
-                        </span>
-
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeRecipeRow(index)}
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addRecipeRow}
-                  className="w-full text-xs h-8 border-dashed mt-1"
-                >
-                  <Plus className="h-3.5 w-3.5 mr-1" />
-                  Add ingredient
-                </Button>
-              </div>
+              <RecipeBuilder
+                recipeRows={recipeRows}
+                ingredients={ingredients}
+                onUpdateRow={updateRecipeRow}
+                onRemoveRow={removeRecipeRow}
+                onAddRow={addRecipeRow}
+              />
 
               {/* Availability Switch */}
               <div className="flex items-center justify-between rounded-lg border border-border p-3.5 bg-muted/20">
@@ -508,7 +446,8 @@ const Page = () => {
                         Danger Zone
                       </p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
-                        Permanently remove this dish and its recipe configuration.
+                        Permanently remove this dish and its recipe
+                        configuration.
                       </p>
                     </div>
                     <Button
@@ -544,7 +483,9 @@ const Page = () => {
                 className="flex-1 text-xs"
                 disabled={isSaving}
               >
-                {isSaving && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+                {isSaving && (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                )}
                 Save Dish
               </Button>
             </SheetFooter>
