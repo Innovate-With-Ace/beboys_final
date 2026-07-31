@@ -115,12 +115,42 @@ const Page = () => {
 
   const createCategory = useMutation({
     mutationFn: (newCategory: CategoryNewPayload) =>
-      fetchApi<Categories>("/api/category", {
+      fetchApi<Categories>("/api/categories", {
         body: JSON.stringify(newCategory),
         method: "POST",
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+    },
+  });
+
+  const updateCategory = useMutation({
+    mutationFn: (updatedCategory: Categories) =>
+      fetchApi<{ success: boolean }>(`/api/categories/${updatedCategory.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(updatedCategory),
+      }),
+    // 'variables' contains the updatedCategory object passed to mutateAsync
+    onSuccess: (_, variables) => {
+      queryClient.setQueryData<Categories[]>(["categories"], (old) =>
+        old
+          ? old.map((cat) => (cat.id === variables.id ? variables : cat))
+          : [variables],
+      );
+    },
+  });
+
+  const deleteCategory = useMutation({
+    mutationFn: (deletedCategory: Categories) =>
+      fetchApi<{ success: boolean }>(`/api/categories/${deletedCategory.id}`, {
+        method: "DELETE",
+        body: JSON.stringify(deletedCategory),
+      }),
+
+    onSuccess: (data, deletedDish) => {
+      queryClient.setQueryData<Categories[]>(["categories"], (old) =>
+        old ? old.filter((d) => d.id !== deletedDish.id) : [],
+      );
     },
   });
 
@@ -134,9 +164,9 @@ const Page = () => {
       price: selectedDish?.price ?? 0,
       servings: selectedDish?.servings_left ?? 0,
       is_available: selectedDish?.is_available ?? true,
+      category_id: selectedDish?.category_id ?? "", // ✅ add this
     });
 
-    setFormCategoryId(selectedDish?.category_id ?? "");
     setRecipeRows(selectedDish?.ingredients ?? []);
   }, [selectedDish, isOpen, reset]);
 
@@ -166,7 +196,7 @@ const Page = () => {
         price: data.price,
         servings: data.servings,
         servings_left: data.servings,
-        category_id: formCategoryId ?? "",
+        category_id: data.category_id, // ✅ from the form itself
         ingredients: recipeRows,
         is_available: data.is_available,
         image: selectedDish.image,
@@ -178,7 +208,7 @@ const Page = () => {
         price: data.price,
         servings: data.servings,
         servings_left: data.servings,
-        category_id: formCategoryId ?? "",
+        category_id: data.category_id, // ✅ from the form itself
         ingredients: recipeRows,
         is_available: data.is_available,
       };
@@ -240,6 +270,12 @@ const Page = () => {
               onSelectCategory={setFilterCategoryId}
               categories={categories}
               onAddCategory={(label) => createCategory.mutateAsync({ label })}
+              onRenameCategory={(id, label) =>
+                updateCategory.mutateAsync({ id, label } as Categories)
+              }
+              onDeleteCategory={(id) =>
+                deleteCategory.mutateAsync({ id } as Categories)
+              }
             />
           </div>
 
@@ -378,14 +414,14 @@ const Page = () => {
                     <Controller
                       control={control}
                       name="price"
-                      rules={{ required: true, min: 0 }}
+                      rules={{ required: true, min: 1 }}
                       render={({ field: { onChange, value, ...rest } }) => (
                         <Input
                           id="price"
                           type="number"
                           placeholder="0.00"
                           className="pl-7 h-9"
-                          min={0}
+                          min={1}
                           value={value}
                           onChange={(e) => onChange(Number(e.target.value))}
                           {...rest}
@@ -402,7 +438,7 @@ const Page = () => {
                   <Controller
                     control={control}
                     name="servings"
-                    rules={{ required: true, min: 0 }}
+                    rules={{ required: true, min: 1 }}
                     render={({ field: { onChange, value, ...rest } }) => (
                       <Input
                         id="servings"
@@ -424,17 +460,25 @@ const Page = () => {
                 <Controller
                   control={control}
                   name="category_id"
-                  render={({ field }) => (
-                    <CategoriesSelect
-                      disable={categoryIsLoading}
-                      selectedCategoryId={field.value}
-                      onSelectCategory={field.onChange}
-                      categories={categories}
-                      /* ADD THIS PROP HERE TOO 👇 */
-                      onAddCategory={(label) =>
-                        createCategory.mutateAsync({ label })
-                      }
-                    />
+                  rules={{ required: "Please select a category" }} // Add validation here
+                  render={({ field, fieldState }) => (
+                    <>
+                      <CategoriesSelect
+                        disable={categoryIsLoading}
+                        selectedCategoryId={field.value}
+                        onSelectCategory={field.onChange}
+                        categories={categories}
+                        onAddCategory={(label) =>
+                          createCategory.mutateAsync({ label })
+                        }
+                      />
+                      {/* Optional: Show a small red error message if they try to submit without it */}
+                      {fieldState.error && (
+                        <span className="text-[10px] text-destructive">
+                          {fieldState.error.message}
+                        </span>
+                      )}
+                    </>
                   )}
                 />
               </div>
