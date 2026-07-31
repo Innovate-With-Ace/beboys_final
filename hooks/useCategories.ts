@@ -4,7 +4,7 @@ import fetchApi from "@/lib/api";
 
 export function useCategories() {
   return useQuery({
-    queryKey: ["dishes"],
-    queryFn: () => fetchApi<Categories[]>("/api/dishes", { method: "GET" }),
+    queryKey: ["categories"],
+    queryFn: () => fetchApi<Categories[]>("/api/categories", { method: "GET" }),
   });
 }

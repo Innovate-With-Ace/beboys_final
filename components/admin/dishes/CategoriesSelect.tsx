@@ -14,6 +14,7 @@ type Props = {
   onAddCategory?: (label: string) => void;
   onRenameCategory?: (id: string, label: string) => void;
   onDeleteCategory?: (id: string) => void;
+  disable?: boolean;
 };
 
 const CategoriesSelect = ({
@@ -24,6 +25,7 @@ const CategoriesSelect = ({
   onAddCategory,
   onRenameCategory,
   onDeleteCategory,
+  disable,
 }: Props) => {
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -31,6 +33,7 @@ const CategoriesSelect = ({
     <div className="flex items-center gap-1.5 w-full">
       {/* Native Select styled to match shadcn/ui inputs */}
       <select
+        disabled={disable}
         value={selectedCategoryId ?? ""}
         onChange={(e) => onSelectCategory?.(e.target.value)}
         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-2xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 text-foreground truncate cursor-pointer"

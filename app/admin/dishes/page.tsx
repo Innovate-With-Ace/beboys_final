@@ -37,6 +37,8 @@ import fetchApi from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { RecipeBuilder } from "@/components/admin/dishes/RecipeBuilder";
 import { useDishes } from "@/hooks/useDishes";
+import { useCategories } from "@/hooks/useCategories";
+import { Categories } from "@/types/Categories";
 
 type DishFormValues = {
   name: string;
@@ -44,6 +46,10 @@ type DishFormValues = {
   servings: number;
   is_available: boolean;
   category_id: string;
+};
+
+type CategoryNewPayload = {
+  label: string;
 };
 
 type RecipeRow = {
@@ -66,6 +72,7 @@ const Page = () => {
     },
   });
 
+  // Dishes Data
   const { data: dishes, isLoading } = useDishes();
 
   const createDish = useMutation({
@@ -101,6 +108,19 @@ const Page = () => {
       queryClient.setQueryData<Dish[]>(["dishes"], (old) =>
         old ? old.filter((d) => d.id !== deletedDish.id) : [],
       );
+    },
+  });
+
+  const { data: categories, isLoading: categoryIsLoading } = useCategories();
+
+  const createCategory = useMutation({
+    mutationFn: (newCategory: CategoryNewPayload) =>
+      fetchApi<Categories>("/api/category", {
+        body: JSON.stringify(newCategory),
+        method: "POST",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
     },
   });
 
@@ -215,8 +235,11 @@ const Page = () => {
           <div className="w-48 sm:w-56">
             <CategoriesSelect
               showAllOption
+              disable={categoryIsLoading}
               selectedCategoryId={filterCategoryId}
               onSelectCategory={setFilterCategoryId}
+              categories={categories}
+              onAddCategory={(label) => createCategory.mutateAsync({ label })}
             />
           </div>
 
@@ -403,9 +426,14 @@ const Page = () => {
                   name="category_id"
                   render={({ field }) => (
                     <CategoriesSelect
+                      disable={categoryIsLoading}
                       selectedCategoryId={field.value}
                       onSelectCategory={field.onChange}
                       categories={categories}
+                      /* ADD THIS PROP HERE TOO 👇 */
+                      onAddCategory={(label) =>
+                        createCategory.mutateAsync({ label })
+                      }
                     />
                   )}
                 />
