@@ -21,7 +21,6 @@ import { Switch } from "@/components/ui/switch";
 import {
   ImageUp,
   Plus,
-  X,
   Trash2,
   Search,
   UtensilsCrossed,
@@ -34,11 +33,12 @@ import { mockIngredients } from "@/data/ingredients";
 import { useForm, Controller } from "react-hook-form";
 import { Dish } from "@/types/Dish";
 import fetchApi from "@/lib/api";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RecipeBuilder } from "@/components/admin/dishes/RecipeBuilder";
 import { useDishes } from "@/hooks/useDishes";
 import { useCategories } from "@/hooks/useCategories";
 import { Categories } from "@/types/Categories";
+import { toast } from "sonner";
 
 type DishFormValues = {
   name: string;
@@ -81,8 +81,14 @@ const Page = () => {
         body: JSON.stringify(newDish),
         method: "POST",
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dishes"] });
+    onSuccess: (created) => {
+      queryClient.setQueryData<Dish[]>(["dishes"], (old) =>
+        old ? [...old, created] : [created],
+      );
+      toast.success("Dish added successfully");
+    },
+    onError: () => {
+      toast.error("Failed to add dish. Please try again.");
     },
   });
 
@@ -96,6 +102,10 @@ const Page = () => {
       queryClient.setQueryData<Dish[]>(["dishes"], (old) =>
         old ? old.map((d) => (d.id === updated.id ? updated : d)) : [updated],
       );
+      toast.success("Dish updated");
+    },
+    onError: () => {
+      toast.error("Failed to update dish. Please try again.");
     },
   });
 
@@ -108,6 +118,10 @@ const Page = () => {
       queryClient.setQueryData<Dish[]>(["dishes"], (old) =>
         old ? old.filter((d) => d.id !== deletedDish.id) : [],
       );
+      toast.success("Dish deleted");
+    },
+    onError: () => {
+      toast.error("Failed to delete dish. Please try again.");
     },
   });
 
@@ -121,22 +135,29 @@ const Page = () => {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success("Category added");
+    },
+    onError: () => {
+      toast.error("Failed to add category. Please try again.");
     },
   });
 
   const updateCategory = useMutation({
     mutationFn: (updatedCategory: Categories) =>
-      fetchApi<{ success: boolean }>(`/api/categories/${updatedCategory.id}`, {
+      fetchApi<Categories>(`/api/categories/${updatedCategory.id}`, {
         method: "PATCH",
         body: JSON.stringify(updatedCategory),
       }),
-    // 'variables' contains the updatedCategory object passed to mutateAsync
-    onSuccess: (_, variables) => {
+    onSuccess: (updated) => {
       queryClient.setQueryData<Categories[]>(["categories"], (old) =>
         old
-          ? old.map((cat) => (cat.id === variables.id ? variables : cat))
-          : [variables],
+          ? old.map((cat) => (cat.id === updated.id ? updated : cat))
+          : [updated],
       );
+      toast.success("Category updated");
+    },
+    onError: () => {
+      toast.error("Failed to update category. Please try again.");
     },
   });
 
@@ -146,11 +167,14 @@ const Page = () => {
         method: "DELETE",
         body: JSON.stringify(deletedCategory),
       }),
-
-    onSuccess: (data, deletedDish) => {
+    onSuccess: (data, deletedCategory) => {
       queryClient.setQueryData<Categories[]>(["categories"], (old) =>
-        old ? old.filter((d) => d.id !== deletedDish.id) : [],
+        old ? old.filter((cat) => cat.id !== deletedCategory.id) : [],
       );
+      toast.success("Category deleted");
+    },
+    onError: () => {
+      toast.error("Failed to delete category. Please try again.");
     },
   });
 
@@ -219,10 +243,7 @@ const Page = () => {
   };
 
   const handleDeleteDish = async (dish: Dish) => {
-    try {
-      await deleteDish.mutateAsync(dish);
-    } catch (err) {}
-
+    await deleteDish.mutateAsync(dish).catch(() => {}); // swallow here only to prevent unhandled rejection, toast already shown via onError
     close();
   };
 

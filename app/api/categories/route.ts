@@ -17,6 +17,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
+
+  if (!body.label || typeof body.label !== "string") {
+    return NextResponse.json({ error: "Label is required" }, { status: 400 });
+  }
   const { data, error } = await supabaseAdmin
     .from("categories")
     .insert(body)
