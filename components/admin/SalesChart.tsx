@@ -70,7 +70,7 @@ const SalesChart = () => {
 
       {/* --- CHART --- */}
       <div className="flex-1 mt-auto">
-        <ChartContainer config={chartConfig} className="h-[220px] w-full">
+        <ChartContainer config={chartConfig} className="h-55 w-full">
           <BarChart
             data={chartData}
             margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
@@ -97,7 +97,7 @@ const SalesChart = () => {
               cursor={{ fill: "var(--bg-muted)", opacity: 0.4 }}
               content={
                 <ChartTooltipContent
-                  formatter={(value) => `₱${value.toLocaleString()}`}
+                  formatter={(value) => `₱${value!.toLocaleString()}`}
                 />
               }
             />

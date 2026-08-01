@@ -179,7 +179,6 @@ const Page = () => {
   });
 
   const [filterCategoryId, setFilterCategoryId] = useState<string>("");
-  const [formCategoryId, setFormCategoryId] = useState<string>("");
   const [recipeRows, setRecipeRows] = useState<RecipeRow[]>([]);
 
   useEffect(() => {
@@ -310,7 +309,7 @@ const Page = () => {
       </div>
 
       {/* Main Grid/Table Views */}
-      <main className="min-h-[400px] mt-4">
+      <main className="min-h-100 mt-4">
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-pulse">
             {[...Array(4)].map((_, i) => (

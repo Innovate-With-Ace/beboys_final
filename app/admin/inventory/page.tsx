@@ -7,9 +7,6 @@ import { Input } from "@/components/ui/input";
 import IngredientCard from "@/components/admin/inventory/IngredientCard";
 import { useIngredientEditorStore } from "@/stores/IngredientEditorStore";
 import IngredientDialog from "@/components/admin/inventory/IngredientDialog";
-import fetchApi from "@/lib/api";
-import { Ingredient } from "@/types/Ingredients";
-import { useQuery } from "@tanstack/react-query";
 import { useIngredients } from "@/hooks/useIngredients";
 
 type FilterStatus = "all" | "low" | "critical" | "in-stock";
@@ -145,7 +142,7 @@ const Page = () => {
       </div>
 
       {/* Main Grid View */}
-      <main className="min-h-[400px]">
+      <main className="min-h-100">
         {isLoading ? (
           /* Skeleton Grid Loader */
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-pulse">

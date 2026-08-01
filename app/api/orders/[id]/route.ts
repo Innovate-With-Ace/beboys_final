@@ -8,7 +8,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const body = await req.json(); // { status: 'cancelled' | 'preparing' | 'completed' }
+    const body = await req.json();
 
     const { data, error } = await supabaseAdmin
       .from("orders")
