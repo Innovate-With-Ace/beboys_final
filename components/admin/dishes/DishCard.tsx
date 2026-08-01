@@ -14,7 +14,9 @@ type Props = {
 const DishCard = ({ dish }: Props) => {
   const openForEdit = useDishEditorStore((s) => s.openForEdit);
 
-  const isOutOfStock = !dish.is_available || dish.servings_left <= 0;
+  const isOutOfStock = dish.servings_left <= 0;
+
+  const isUnavailable = !dish.is_available;
   const isLowStock = !isOutOfStock && dish.servings_left <= 3;
 
   return (
@@ -22,7 +24,7 @@ const DishCard = ({ dish }: Props) => {
       onClick={() => openForEdit(dish)}
       className={cn(
         "group relative flex flex-col overflow-hidden rounded-xl border border-border/80 bg-card p-0 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md cursor-pointer gap-0",
-        isOutOfStock && "opacity-80"
+        isOutOfStock && "opacity-80",
       )}
     >
       {/* Media Aspect Ratio Container */}
@@ -44,7 +46,10 @@ const DishCard = ({ dish }: Props) => {
         {/* Status Overlays & Badges */}
         {isOutOfStock ? (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px] flex flex-col items-center justify-center gap-1">
-            <Badge variant="destructive" className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 shadow-xs">
+            <Badge
+              variant="destructive"
+              className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 shadow-xs"
+            >
               Out of stock
             </Badge>
           </div>
@@ -52,6 +57,15 @@ const DishCard = ({ dish }: Props) => {
           <div className="absolute top-2 right-2">
             <Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0 text-[10px] font-semibold px-2 py-0.5 shadow-sm">
               {dish.servings_left} left
+            </Badge>
+          </div>
+        ) : isUnavailable ? (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px] flex flex-col items-center justify-center gap-1">
+            <Badge
+              variant="destructive"
+              className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 shadow-xs"
+            >
+              Unavailable
             </Badge>
           </div>
         ) : null}
@@ -71,7 +85,8 @@ const DishCard = ({ dish }: Props) => {
               ₱{dish.price.toFixed(2)}
             </span>
             <span className="text-[11px] text-muted-foreground">
-              {dish.servings_left} {dish.servings_left === 1 ? "serving" : "servings"}
+              {dish.servings_left}{" "}
+              {dish.servings_left === 1 ? "serving" : "servings"}
             </span>
           </div>
         </div>
