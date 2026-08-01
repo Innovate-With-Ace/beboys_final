@@ -1,51 +1,58 @@
-import { CartItem } from '@/types/CartItem'
-import { Dish } from '@/types/Dish'
-import {create} from 'zustand'
+import { CartItem } from "@/types/CartItem";
+import { Dish } from "@/types/Dish";
+import { create } from "zustand";
 
 type CartStoreType = {
-    items  : CartItem[],
-    addItem : (dish : Dish) => void;
-    decrementQuantity : (dish : Dish) => void;
-    clearItem : () => void;
-}
+  items: CartItem[];
+  addItem: (dish: Dish) => void;
+  decrementQuantity: (dish: Dish) => void;
+  clearItem: () => void;
+};
 
 export const useCartStore = create<CartStoreType>((set, get) => ({
-    items : [],
-    
-    addItem : (dish) => {
-        const {items} = get();
-        const existing = items.find((item) => item.item.id === dish.id);
+  items: [],
 
-        if(existing){
-            const canAddMore = existing.quantity + 1 <= dish.servings;
-            if(!canAddMore) return;
+  addItem: (dish) => {
+    const { items } = get();
+    const existing = items.find((item) => item.item.id === dish.id);
 
-            return set({items : items.map((item) => 
-                    item.item.id === dish.id ? {...item, quantity : item.quantity + 1} : item)});
-        }
+    if (existing) {
+      const canAddMore = existing.quantity + 1 <= dish.servings_left;
+      if (!canAddMore) return;
 
-       return set({items: [...items, {item: dish, quantity: 1}]});
-   },
+      return set({
+        items: items.map((item) =>
+          item.item.id === dish.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item,
+        ),
+      });
+    }
 
-   decrementQuantity: (dish) => {
-        const { items } = get()
-        const existing = items.find(item => item.item.id === dish.id)
+    return set({ items: [...items, { item: dish, quantity: 1 }] });
+  },
 
-        if (!existing) return
+  decrementQuantity: (dish) => {
+    const { items } = get();
+    const existing = items.find((item) => item.item.id === dish.id);
 
-        const shouldRemove = existing.quantity - 1 === 0
+    if (!existing) return;
 
-        if (shouldRemove) {
-            return set({ items: items.filter((item) => item.item.id !== dish.id) })
-        }
+    const shouldRemove = existing.quantity - 1 === 0;
 
-        return set({
-            items: items.map((item) =>
-                item.item.id === dish.id ? { ...item, quantity: item.quantity - 1 } : item
-            ),
-        })
-    },
-   clearItem : () => {
-    set({items : []});
-   }
+    if (shouldRemove) {
+      return set({ items: items.filter((item) => item.item.id !== dish.id) });
+    }
+
+    return set({
+      items: items.map((item) =>
+        item.item.id === dish.id
+          ? { ...item, quantity: item.quantity - 1 }
+          : item,
+      ),
+    });
+  },
+  clearItem: () => {
+    set({ items: [] });
+  },
 }));

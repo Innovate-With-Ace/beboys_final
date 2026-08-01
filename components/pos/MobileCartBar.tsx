@@ -14,9 +14,10 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 type Props = {
   onCheckoutComplete?: (items: CartItem[]) => void;
+  isCheckingOut?: boolean; // Add prop here
 };
 
-const MobileCartBar = ({ onCheckoutComplete }: Props) => {
+const MobileCartBar = ({ onCheckoutComplete, isCheckingOut }: Props) => {
   const { items } = useCartStore();
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -53,10 +54,10 @@ const MobileCartBar = ({ onCheckoutComplete }: Props) => {
         <VisuallyHidden>
           <SheetTitle>Mobile Cart</SheetTitle>
         </VisuallyHidden>
-        {/* Subtle drag handle indicator */}
         <div className="w-12 h-1.5 bg-border rounded-full mx-auto mb-4 mt-2" />
 
         <CartPanel
+          isCheckingOut={isCheckingOut} // Pass it down!
           onCheckoutComplete={(orderItems) => {
             setSheetOpen(false);
             onCheckoutComplete?.(orderItems);

@@ -16,15 +16,20 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Soup, ClipboardList, Search, Loader2 } from "lucide-react";
 import { CartItem } from "@/types/CartItem";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import fetchApi from "@/lib/api";
+import { useCartStore } from "@/stores/CartStore";
 
 const Page = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   // Local UI State
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [lastOrder, setLastOrder] = useState<CartItem[]>([]);
+  const { clearItem } = useCartStore();
 
   // POS Session State (Keep this if you track daily setup in Zustand)
   const servingsSetToday = useDishStore((s) => s.servingSetToday);
@@ -53,6 +58,35 @@ const Page = () => {
     });
   }, [dishes, search, selectedCategory]);
 
+  // create Mutation
+  const submitOrder = useMutation({
+    mutationFn: async (items: CartItem[]) => {
+      return fetchApi<{ success: boolean }>("/api/pos", {
+        body: JSON.stringify({ items, source: "pos" }),
+        method: "POST",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dishes"] });
+    },
+  });
+
+  const isCheckingOut = submitOrder.isPending;
+
+  const handleCheckout = async (items: CartItem[]) => {
+    try {
+      // Send to database
+      await submitOrder.mutateAsync(items);
+
+      // Open the success digital receipt (only happens if the await above succeeds)
+      setLastOrder(items);
+      setSummaryOpen(true);
+      clearItem();
+    } catch (error) {
+      console.error("Failed to checkout", error);
+      // Maybe show a toast notification here
+    }
+  };
   return (
     <main className="bg-bg min-h-screen p-4 flex flex-col">
       {/* --- HEADER --- */}
@@ -63,7 +97,7 @@ const Page = () => {
           </div>
           <div>
             <h1 className="font-heading font-bold text-sm text-foreground">
-              Today's Menu
+              Today&apos;s Menu
             </h1>
             <p className="text-[11px] font-medium text-muted-foreground">
               {new Date().toLocaleDateString("en-US", {
@@ -167,10 +201,8 @@ const Page = () => {
         {/* Right Side: Desktop Cart */}
         <div className="hidden lg:block flex-1 sticky top-4 self-start w-full">
           <CartPanel
-            onCheckoutComplete={(items) => {
-              setLastOrder(items);
-              setSummaryOpen(true);
-            }}
+            onCheckoutComplete={handleCheckout}
+            isCheckingOut={isCheckingOut}
           />
         </div>
       </div>
@@ -178,10 +210,8 @@ const Page = () => {
       {/* Mobile Cart Bottom Sheet */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
         <MobileCartBar
-          onCheckoutComplete={(items) => {
-            setLastOrder(items);
-            setSummaryOpen(true);
-          }}
+          onCheckoutComplete={handleCheckout}
+          isCheckingOut={isCheckingOut}
         />
       </div>
 

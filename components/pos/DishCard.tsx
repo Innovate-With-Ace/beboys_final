@@ -13,8 +13,8 @@ type Props = {
 };
 
 const DishCard = ({ dish, onAdd }: Props) => {
-  const isSoldOut = dish.servings === 0;
-  const isLow = dish.servings > 0 && dish.servings <= 3;
+  const isSoldOut = dish.servings_left === 0;
+  const isLow = dish.servings_left > 0 && dish.servings_left <= 3;
 
   return (
     <Card
@@ -45,7 +45,7 @@ const DishCard = ({ dish, onAdd }: Props) => {
         )}
         {!isSoldOut && isLow && (
           <div className="absolute top-2 right-2 bg-warning/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-md">
-            ONLY {dish.servings} LEFT
+            ONLY {dish.servings_left} LEFT
           </div>
         )}
       </div>
@@ -63,7 +63,7 @@ const DishCard = ({ dish, onAdd }: Props) => {
           <p
             className={`text-[11px] font-medium ${isSoldOut ? "text-error" : isLow ? "text-warning" : "text-muted-foreground"}`}
           >
-            {isSoldOut ? "0 servings" : `${dish.servings} servings`}
+            {isSoldOut ? "0 servings" : `${dish.servings_left} servings`}
           </p>
         </div>
       </CardContent>

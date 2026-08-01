@@ -1,33 +1,23 @@
 // components/pos/CartPanel.tsx
 "use client";
 import { useCartStore } from "@/stores/CartStore";
-import { useDishStore } from "@/stores/DishStore";
 import CartDishCards from "./CartDishCards";
 import { CartItem } from "@/types/CartItem";
-import { useState } from "react";
 import { ShoppingBag } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 type Props = {
   onCheckoutComplete?: (items: CartItem[]) => void;
+  isCheckingOut?: boolean;
 };
 
-const CartPanel = ({ onCheckoutComplete }: Props) => {
+const CartPanel = ({ onCheckoutComplete, isCheckingOut }: Props) => {
   const { items, clearItem } = useCartStore();
-  const { decrementServings } = useDishStore();
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   const handleCheckout = () => {
-    if (items.length <= 0) return;
-    setIsCheckingOut(true);
-
-    const orderSnapshot = items;
-    items.forEach((item) => decrementServings(item.item.id, item.quantity));
-    clearItem();
-
-    onCheckoutComplete?.(orderSnapshot);
-    setIsCheckingOut(false);
+    if (items.length <= 0 || isCheckingOut) return;
+    onCheckoutComplete?.(items);
   };
-
   const total = items.reduce(
     (sum, item) => sum + item.item.price * item.quantity,
     0,
@@ -69,7 +59,14 @@ const CartPanel = ({ onCheckoutComplete }: Props) => {
           onClick={handleCheckout}
           disabled={items.length <= 0 || isCheckingOut}
         >
-          {isCheckingOut ? "Processing..." : "Complete Checkout"}
+          {isCheckingOut ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            "Complete Checkout"
+          )}
         </button>
       </div>
     </div>
