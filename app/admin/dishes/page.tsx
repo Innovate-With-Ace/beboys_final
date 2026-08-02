@@ -82,9 +82,8 @@ const Page = () => {
         method: "POST",
       }),
     onSuccess: (created) => {
-      queryClient.setQueryData<Dish[]>(["dishes"], (old) =>
-        old ? [...old, created] : [created],
-      );
+      queryClient.invalidateQueries({ queryKey: ["dishes"] });
+      close();
       toast.success("Dish added successfully");
     },
     onError: () => {
@@ -99,10 +98,8 @@ const Page = () => {
         method: "PATCH",
       }),
     onSuccess: (updated) => {
-      queryClient.setQueryData<Dish[]>(["dishes"], (old) =>
-        old ? old.map((d) => (d.id === updated.id ? updated : d)) : [updated],
-      );
-      toast.success("Dish updated");
+      queryClient.invalidateQueries({ queryKey: ["dishes"] });
+      close();
     },
     onError: () => {
       toast.error("Failed to update dish. Please try again.");
