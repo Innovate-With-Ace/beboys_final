@@ -42,7 +42,15 @@ export function RecipeBuilder({
             (i) => i.id === row.ingredient_id,
           );
 
-          // Check if current recipe usage exceeds total available inventory stock
+          // ingredients already used in OTHER rows (excluding this row's own current selection)
+          const usedIngredientIds = recipeRows
+            .filter((_, i) => i !== index)
+            .map((r) => r.ingredient_id);
+
+          const availableIngredients = ingredients.filter(
+            (ing) => !usedIngredientIds.includes(ing.id),
+          );
+
           const isExceedingStock =
             ingredient && row.quantity > ingredient.stock;
 
@@ -67,7 +75,7 @@ export function RecipeBuilder({
                   <option value="" disabled>
                     Select ingredient...
                   </option>
-                  {ingredients.map((ing) => (
+                  {availableIngredients.map((ing) => (
                     <option key={ing.id} value={ing.id}>
                       {ing.name} ({ing.stock} {ing.unit} in stock)
                     </option>

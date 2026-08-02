@@ -39,6 +39,7 @@ import { useDishes } from "@/hooks/useDishes";
 import { useCategories } from "@/hooks/useCategories";
 import { Categories } from "@/types/Categories";
 import { toast } from "sonner";
+import { useIngredients } from "@/hooks/useIngredients";
 
 type DishFormValues = {
   name: string;
@@ -60,7 +61,6 @@ type RecipeRow = {
 const Page = () => {
   const { isOpen, close, selectedDish, openForCreate } = useDishEditorStore();
   const [layout, setLayout] = useState<"grid" | "table">("grid");
-  const { ingredients, setIngredients } = useInventoryStore();
   const queryClient = useQueryClient();
 
   const { control, handleSubmit, reset } = useForm<DishFormValues>({
@@ -178,6 +178,8 @@ const Page = () => {
     },
   });
 
+  const { data: ingredients, isLoading: ingredientsLoading } = useIngredients();
+
   const [filterCategoryId, setFilterCategoryId] = useState<string>("");
   const [recipeRows, setRecipeRows] = useState<RecipeRow[]>([]);
 
@@ -192,10 +194,6 @@ const Page = () => {
 
     setRecipeRows(selectedDish?.ingredients ?? []);
   }, [selectedDish, isOpen, reset]);
-
-  useEffect(() => {
-    setIngredients(mockIngredients);
-  }, [setIngredients]);
 
   const addRecipeRow = () => {
     setRecipeRows((prev) => [...prev, { ingredient_id: "", quantity: 0 }]);
@@ -504,13 +502,23 @@ const Page = () => {
               </div>
 
               {/* Recipe builder section */}
-              <RecipeBuilder
-                recipeRows={recipeRows}
-                ingredients={ingredients}
-                onUpdateRow={updateRecipeRow}
-                onRemoveRow={removeRecipeRow}
-                onAddRow={addRecipeRow}
-              />
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold">
+                    Recipe Breakdown
+                  </Label>
+                </div>
+                <p className="text-[11px] text-muted-foreground -mt-1">
+                  Amounts are per single serving, not total batch.
+                </p>
+                <RecipeBuilder
+                  recipeRows={recipeRows}
+                  ingredients={ingredients ?? []}
+                  onUpdateRow={updateRecipeRow}
+                  onRemoveRow={removeRecipeRow}
+                  onAddRow={addRecipeRow}
+                />
+              </div>
 
               {/* Availability Switch */}
               <div className="flex items-center justify-between rounded-lg border border-border p-3.5 bg-muted/20">
