@@ -107,7 +107,6 @@ const LowStockList = () => {
 
       {/* --- FOOTER ACTION --- */}
       <Button
-        asChild
         variant="outline"
         className="w-full mt-4 text-xs h-9 group"
         size="sm"

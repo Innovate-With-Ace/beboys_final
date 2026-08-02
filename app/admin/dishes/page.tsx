@@ -1,45 +1,43 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
 import CategoriesSelect from "@/components/admin/dishes/CategoriesSelect";
-import TableCartTabs from "@/components/admin/dishes/TableCartTabs";
 import DishGrid from "@/components/admin/dishes/DishGrid";
-import { useEffect, useState } from "react";
-import { useInventoryStore } from "@/stores/InventoryStore";
+import DishTable from "@/components/admin/dishes/DishTable";
+import { RecipeBuilder } from "@/components/admin/dishes/RecipeBuilder";
+import TableCartTabs from "@/components/admin/dishes/TableCartTabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
   SheetDescription,
   SheetFooter,
-  SheetClose,
+  SheetHeader,
+  SheetTitle,
 } from "@/components/ui/sheet";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { useCategories } from "@/hooks/useCategories";
+import { useDishes } from "@/hooks/useDishes";
+import { useIngredients } from "@/hooks/useIngredients";
+import fetchApi from "@/lib/api";
+import { useDishEditorStore } from "@/stores/DishEditorStore";
+import { Categories } from "@/types/Categories";
+import { Dish } from "@/types/Dish";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ImageUp,
-  Plus,
-  Trash2,
-  Search,
-  UtensilsCrossed,
   Loader2,
+  Plus,
+  Search,
+  Trash2,
+  UtensilsCrossed,
 } from "lucide-react";
-import { useDishEditorStore } from "@/stores/DishEditorStore";
-import DishTable from "@/components/admin/dishes/DishTable";
 import Image from "next/image";
-import { mockIngredients } from "@/data/ingredients";
-import { useForm, Controller } from "react-hook-form";
-import { Dish } from "@/types/Dish";
-import fetchApi from "@/lib/api";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { RecipeBuilder } from "@/components/admin/dishes/RecipeBuilder";
-import { useDishes } from "@/hooks/useDishes";
-import { useCategories } from "@/hooks/useCategories";
-import { Categories } from "@/types/Categories";
+import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { useIngredients } from "@/hooks/useIngredients";
 
 type DishFormValues = {
   name: string;
@@ -563,7 +561,7 @@ const Page = () => {
             </form>
 
             <SheetFooter className="border-t border-border px-6 py-4 flex-row gap-2 bg-muted/10">
-              <SheetClose asChild>
+              <SheetClose>
                 <Button
                   variant="outline"
                   size="sm"

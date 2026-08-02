@@ -339,7 +339,7 @@ const IngredientDialog = () => {
 
         {/* Actions Footer */}
         <DialogFooter className="px-6 py-4 border-t border-border/60 bg-muted/10 gap-2 sm:gap-0">
-          <DialogClose asChild>
+          <DialogClose>
             <Button
               type="button"
               variant="outline"

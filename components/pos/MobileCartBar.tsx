@@ -31,7 +31,7 @@ const MobileCartBar = ({ onCheckoutComplete, isCheckingOut }: Props) => {
 
   return (
     <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-      <SheetTrigger asChild>
+      <SheetTrigger>
         <button className="fixed bottom-4 left-4 right-4 bg-bg border border-border rounded-2xl px-5 py-3.5 flex items-center justify-between shadow-[0_8px_30px_rgb(0,0,0,0.12)] active:scale-[0.98] transition-transform z-50">
           <div className="flex flex-col items-start">
             <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">

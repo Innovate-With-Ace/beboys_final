@@ -111,12 +111,7 @@ const Page = () => {
 
         <div className="flex items-center gap-3">
           {/* Use Next.js Link instead of standard <a> tag for faster client-side routing */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 text-xs h-8"
-            asChild
-          >
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8">
             <Link href="/pos/setup">
               <ClipboardList className="h-3.5 w-3.5 text-muted-foreground" />
               Set servings
