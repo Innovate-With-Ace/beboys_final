@@ -40,7 +40,7 @@ const RecentOrders = () => {
         </div>
       ) : (
         <div className="flex flex-col flex-1">
-          {data.map((order, i) => {
+          {data.slice(0, 5).map((order, i) => {
             index++;
             return (
               <div

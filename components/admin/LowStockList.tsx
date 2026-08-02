@@ -113,7 +113,7 @@ const LowStockList = () => {
         size="sm"
       >
         <Link
-          href="/admin/ingredients"
+          href="/admin/inventory"
           className="flex items-center justify-center gap-1.5"
         >
           View all ingredients
