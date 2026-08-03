@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { validateUser } from "@/auth-guard";
+import { ingredientSchema } from "@/lib/schemas/ingredient";
 
 export async function GET() {
   try {
@@ -36,9 +37,18 @@ export async function POST(req: NextRequest) {
     if (error) return error;
     const body = await req.json();
 
+    const result = ingredientSchema.safeParse(body);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error.issues[0].message },
+        { status: 400 },
+      );
+    }
+
     const { data, error: ingredientsError } = await supabaseAdmin
       .from("ingredients")
-      .insert(body)
+      .insert(result.data)
       .select()
       .single();
 

@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { Dish } from "@/types/Dish";
 import { validateUser } from "@/auth-guard";
+import { dishSchema } from "@/lib/schemas/dish";
+
+// Create a partial schema specifically for PATCH (all fields optional)
+const patchDishSchema = dishSchema.partial();
 
 export async function PATCH(
   req: NextRequest,
@@ -9,37 +12,29 @@ export async function PATCH(
 ) {
   try {
     const { error } = await validateUser(["org:admin"]);
-
     if (error) return error;
 
-    const body: Dish = await req.json();
+    const body = await req.json();
     const { id } = await params;
 
-    if (
-      !body.name ||
-      !body.price ||
-      !body.servings ||
-      !body.servings_left ||
-      !body.category_id ||
-      body.is_available === undefined
-    ) {
+    // Validate using the partial schema
+    const result = patchDishSchema.safeParse(body);
+
+    if (!result.success) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: result.error.issues[0].message },
         { status: 400 },
       );
     }
 
+    // Separate ingredients from the rest of the fields
+    const { ingredients, ...dishData } = result.data;
+
+    // 1. Update only the fields that were actually provided in the request
+    // We omit 'image: null' so existing images don't get accidentally wiped out
     const { data, error: dishError } = await supabaseAdmin
       .from("dishes")
-      .update({
-        name: body.name,
-        price: body.price,
-        servings: body.servings,
-        servings_left: body.servings_left,
-        image: body.image,
-        category_id: body.category_id,
-        is_available: body.is_available,
-      })
+      .update(dishData)
       .eq("id", id)
       .select()
       .single();
@@ -48,34 +43,39 @@ export async function PATCH(
       return NextResponse.json({ error: dishError.message }, { status: 400 });
     }
 
-    // wipe old recipe rows first, so removed ingredients don't linger
-    const { error: deleteError } = await supabaseAdmin
-      .from("dish_ingredients")
-      .delete()
-      .eq("dish_id", id);
-
-    if (deleteError) {
-      return NextResponse.json({ error: deleteError.message }, { status: 400 });
-    }
-
-    // insert the current set of ingredients fresh
-    const ingredients = body.ingredients ?? [];
-    if (ingredients.length > 0) {
-      const { error: insertError } = await supabaseAdmin
+    // 2. Only update ingredients if they were actually provided in the payload
+    if (ingredients !== undefined) {
+      // Wipe old recipe rows first
+      const { error: deleteError } = await supabaseAdmin
         .from("dish_ingredients")
-        .insert(
-          ingredients.map((ing) => ({
-            dish_id: id,
-            ingredient_id: ing.ingredient_id,
-            quantity: ing.quantity,
-          })),
-        );
+        .delete()
+        .eq("dish_id", id);
 
-      if (insertError) {
+      if (deleteError) {
         return NextResponse.json(
-          { error: insertError.message },
+          { error: deleteError.message },
           { status: 400 },
         );
+      }
+
+      // Insert the new set of ingredients fresh (if any exist)
+      if (ingredients.length > 0) {
+        const { error: insertError } = await supabaseAdmin
+          .from("dish_ingredients")
+          .insert(
+            ingredients.map((ing) => ({
+              dish_id: id,
+              ingredient_id: ing.ingredient_id,
+              quantity: ing.quantity,
+            })),
+          );
+
+        if (insertError) {
+          return NextResponse.json(
+            { error: insertError.message },
+            { status: 400 },
+          );
+        }
       }
     }
 
@@ -95,6 +95,7 @@ export async function DELETE(
   try {
     const { error } = await validateUser(["org:admin"]);
     if (error) return error;
+
     const { id } = await params;
 
     const { error: dishError } = await supabaseAdmin
