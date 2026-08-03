@@ -1,4 +1,5 @@
 import { validateUser } from "@/auth-guard";
+import { dishSchema } from "@/lib/schemas/dish";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { Dish } from "@/types/Dish";
 import { NextResponse, NextRequest } from "next/server";
@@ -12,31 +13,23 @@ export async function POST(req: NextRequest) {
     }
     const body: Dish = await req.json();
 
-    if (
-      !body.name ||
-      !body.price ||
-      !body.servings ||
-      !body.servings_left ||
-      !body.category_id ||
-      body.is_available === undefined
-    ) {
+    const result = dishSchema.safeParse(body);
+
+    if (!result.success) {
+      console.log(result.error.issues[0].message);
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: result.error.issues[0].message },
         { status: 400 },
       );
     }
 
+    // Separate ingredients from dish details
+    const { ingredients, ...dishData } = result.data;
+
+    // 1. Insert the dish (Spread dishData properly instead of wrapping it)
     const { data, error: dishError } = await supabaseAdmin
       .from("dishes")
-      .insert({
-        name: body.name,
-        price: body.price,
-        servings: body.servings,
-        servings_left: body.servings_left,
-        image: body.image,
-        category_id: body.category_id,
-        is_available: body.is_available,
-      })
+      .insert({ ...dishData, image: null })
       .select()
       .single();
 
@@ -45,7 +38,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: dishError.message }, { status: 400 });
     }
 
-    for (const ing of body.ingredients ?? []) {
+    // 2. Loop through the validated ingredients and insert/upsert them
+    for (const ing of ingredients ?? []) {
       const { error: ingError } = await supabaseAdmin
         .from("dish_ingredients")
         .upsert({
@@ -62,6 +56,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(data, { status: 201 });
   } catch (err) {
+    console.error(err);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

@@ -1,14 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { Dish } from "@/types/Dish";
 import { OrderItem } from "@/types/OrderItem";
 import { validateUser } from "@/auth-guard";
-
-type Payload = {
-  items: { item: Dish; quantity: number }[];
-  source: "pos" | "mobile";
-};
+import { orderInputSchema } from "@/lib/schemas/order";
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,8 +12,20 @@ export async function POST(req: NextRequest) {
       return error;
     }
 
-    const body: Payload = await req.json();
-    const dishIDs = body.items.map((item) => item.item.id);
+    const body = await req.json();
+
+    // 1. Validate incoming payload using Zod (lightweight input schema)
+    const result = orderInputSchema.safeParse(body);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error.issues[0].message },
+        { status: 400 },
+      );
+    }
+
+    const validBody = result.data;
+    const dishIDs = validBody.items.map((item) => item.item.id);
 
     const { data: dishes, error: dishesError } = await supabaseAdmin
       .from("dishes")
@@ -36,12 +42,12 @@ export async function POST(req: NextRequest) {
     const orderItems: OrderItem[] = [];
     let total = 0;
 
-    for (const i of body.items) {
+    for (const i of validBody.items) {
       const dish = dishes.find((d) => d.id === i.item.id);
 
       if (!dish) {
         return NextResponse.json(
-          { error: `Dish ${i.item.name} not found.` },
+          { error: `Dish ${i.item.name ?? "Unknown"} not found.` },
           { status: 404 },
         );
       }
@@ -70,7 +76,7 @@ export async function POST(req: NextRequest) {
       .insert({
         cashier_id: userId,
         total,
-        status: body.source === "pos" ? "completed" : "pending",
+        status: validBody.source === "pos" ? "completed" : "pending",
       })
       .select()
       .single();
@@ -176,6 +182,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(order, { status: 201 });
   } catch (err) {
+    console.error(err);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { validateUser } from "@/auth-guard";
+import { categorySchema } from "@/lib/schemas/category";
 
 export async function GET(req: NextRequest) {
   try {
@@ -37,12 +38,21 @@ export async function POST(req: NextRequest) {
 
     if (error) return error;
 
+    const result = categorySchema.safeParse(body);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error.issues[0].message },
+        { status: 400 },
+      );
+    }
+
     if (!body.label || typeof body.label !== "string") {
       return NextResponse.json({ error: "Label is required" }, { status: 400 });
     }
     const { data, error: categoriesError } = await supabaseAdmin
       .from("categories")
-      .insert(body)
+      .insert(result.data)
       .select("*")
       .maybeSingle();
 
