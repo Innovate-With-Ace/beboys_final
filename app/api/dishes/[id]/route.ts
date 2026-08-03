@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { Dish } from "@/types/Dish";
+import { validateUser } from "@/auth-guard";
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { error } = await validateUser(["org:admin"]);
+
+    if (error) return error;
+
     const body: Dish = await req.json();
     const { id } = await params;
 
@@ -24,7 +29,7 @@ export async function PATCH(
       );
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error: dishError } = await supabaseAdmin
       .from("dishes")
       .update({
         name: body.name,
@@ -39,8 +44,8 @@ export async function PATCH(
       .select()
       .single();
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (dishError) {
+      return NextResponse.json({ error: dishError.message }, { status: 400 });
     }
 
     // wipe old recipe rows first, so removed ingredients don't linger
@@ -88,13 +93,18 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { error } = await validateUser(["org:admin"]);
+    if (error) return error;
     const { id } = await params;
 
-    const { error } = await supabaseAdmin.from("dishes").delete().eq("id", id);
+    const { error: dishError } = await supabaseAdmin
+      .from("dishes")
+      .delete()
+      .eq("id", id);
 
-    if (error) {
-      console.log("Error deleting dish:", error.message);
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (dishError) {
+      console.log("Error deleting dish:", dishError.message);
+      return NextResponse.json({ error: dishError.message }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });

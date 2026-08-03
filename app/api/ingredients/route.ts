@@ -1,15 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { validateUser } from "@/auth-guard";
 
 export async function GET() {
   try {
-    const { data, error } = await supabaseAdmin
+    const { error } = await validateUser(["org:admin", "org:staff"]);
+
+    if (error) return error;
+
+    const { data, error: ingredientsError } = await supabaseAdmin
       .from("ingredients")
       .select("*")
       .order("name", { ascending: false });
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (ingredientsError) {
+      return NextResponse.json(
+        { error: ingredientsError.message },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json(data);
@@ -23,16 +31,22 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const { error } = await validateUser(["org:admin", "org:staff"]);
+
+    if (error) return error;
     const body = await req.json();
 
-    const { data, error } = await supabaseAdmin
+    const { data, error: ingredientsError } = await supabaseAdmin
       .from("ingredients")
       .insert(body)
       .select()
       .single();
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (ingredientsError) {
+      return NextResponse.json(
+        { error: ingredientsError.message },
+        { status: 400 },
+      );
     }
 
     return NextResponse.json(data, { status: 201 });

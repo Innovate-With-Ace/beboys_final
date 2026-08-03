@@ -1,9 +1,15 @@
+import { validateUser } from "@/auth-guard";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { Dish } from "@/types/Dish";
 import { NextResponse, NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
+    const { error } = await validateUser(["org:admin"]);
+
+    if (error) {
+      return error;
+    }
     const body: Dish = await req.json();
 
     if (
@@ -20,7 +26,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error: dishError } = await supabaseAdmin
       .from("dishes")
       .insert({
         name: body.name,
@@ -34,9 +40,9 @@ export async function POST(req: NextRequest) {
       .select()
       .single();
 
-    if (error) {
-      console.log(error.message);
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (dishError) {
+      console.log(dishError.message);
+      return NextResponse.json({ error: dishError.message }, { status: 400 });
     }
 
     for (const ing of body.ingredients ?? []) {
@@ -65,13 +71,18 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
-    const { data, error } = await supabaseAdmin
+    const { error } = await validateUser(["org:admin", "org:staff"]);
+
+    if (error) {
+      return error;
+    }
+    const { data, error: disheError } = await supabaseAdmin
       .from("dishes")
       .select("*, ingredients:dish_ingredients(ingredient_id, quantity)")
       .order("name", { ascending: false });
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (disheError) {
+      return NextResponse.json({ error: disheError.message }, { status: 500 });
     }
 
     return NextResponse.json(data);
