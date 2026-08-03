@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { Dish } from "@/types/Dish";
 import { OrderItem } from "@/types/OrderItem";
+import { validateUser } from "@/auth-guard";
 
 type Payload = {
   items: { item: Dish; quantity: number }[];
@@ -11,9 +12,10 @@ type Payload = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { error, userId } = await validateUser(["org:admin", "org:staff"]);
+
+    if (error) {
+      return error;
     }
 
     const body: Payload = await req.json();
