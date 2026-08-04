@@ -205,6 +205,23 @@ const Page = () => {
   };
 
   const onSubmit = async (data: DishFormValues) => {
+    // Ensure there is at least one ingredient row added
+    if (recipeRows.length === 0) {
+      toast.error("Please add at least one ingredient to the recipe.");
+      return;
+    }
+
+    // Optional: Validate that rows aren't empty (e.g. missing ingredient_id or quantity <= 0)
+    const hasInvalidRow = recipeRows.some(
+      (row) => !row.ingredient_id || row.quantity <= 0,
+    );
+    if (hasInvalidRow) {
+      toast.error(
+        "Please fill out all recipe rows with a valid ingredient and quantity.",
+      );
+      return;
+    }
+
     if (selectedDish) {
       const updatedDish: Dish = {
         id: selectedDish.id,
@@ -212,7 +229,7 @@ const Page = () => {
         price: data.price,
         servings: data.servings,
         servings_left: data.servings,
-        category_id: data.category_id, // ✅ from the form itself
+        category_id: data.category_id,
         ingredients: recipeRows,
         is_available: data.is_available,
         image: selectedDish.image,
@@ -224,7 +241,7 @@ const Page = () => {
         price: data.price,
         servings: data.servings,
         servings_left: data.servings,
-        category_id: data.category_id, // ✅ from the form itself
+        category_id: data.category_id,
         ingredients: recipeRows,
         is_available: data.is_available,
       };
