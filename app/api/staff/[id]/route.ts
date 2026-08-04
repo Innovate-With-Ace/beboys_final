@@ -54,7 +54,14 @@ export async function DELETE(
 
   if (error) return error;
 
-  const body = await req.json();
+  // Safely parse body, handling cases where a body might be empty or missing for a delete request
+  let body = {};
+  try {
+    body = await req.json();
+  } catch {
+    // Fallback if no body is sent
+  }
+
   const result = StaffModeSchema.safeParse(body);
 
   if (!result.success) {
@@ -71,11 +78,23 @@ export async function DELETE(
     let clerkResult;
 
     if (result.data.mode === "delete") {
-      clerkResult = await clerk.organizations.deleteOrganizationMembership({
-        organizationId: orgId!,
-        userId: id,
-      });
+      // Option A: If you want to completely delete the user account from Clerk.
+      // Note: Clerk automatically removes memberships when a user is deleted,
+      // but deleting the membership explicitly first or just deleting the user works.
+      // It's safest to delete the membership first so you don't hit orphan/stale states.
+      try {
+        await clerk.organizations.deleteOrganizationMembership({
+          organizationId: orgId!,
+          userId: id,
+        });
+      } catch {
+        // Ignore if membership was already gone, proceed to delete user
+      }
+
+      // Now delete the user account completely
+      clerkResult = await clerk.users.deleteUser(id);
     } else if (result.data.mode === "revoke") {
+      // Revoking a pending invitation
       clerkResult = await clerk.organizations.revokeOrganizationInvitation({
         invitationId: id,
         organizationId: orgId!,
@@ -89,7 +108,7 @@ export async function DELETE(
     );
   } catch (err: unknown) {
     const errorMessage =
-      err instanceof Error ? err.message : "Failed to fetch staff";
+      err instanceof Error ? err.message : "Failed to process request";
 
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
