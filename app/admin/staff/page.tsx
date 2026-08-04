@@ -327,7 +327,7 @@ export default function StaffManagementPage() {
                             className="text-destructive focus:text-destructive focus:bg-destructive/10"
                             onClick={() =>
                               handleRemove(
-                                member.id,
+                                member.userID ? member.userID : member.id,
                                 member.userID ? "delete" : "revoke",
                               )
                             }

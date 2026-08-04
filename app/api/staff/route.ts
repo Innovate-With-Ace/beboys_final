@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
       emailAddress: email,
       role: validatedRole,
       expiresInDays: 3,
+      redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/accept-invite`,
     });
 
     return NextResponse.json({ success: true, invitation }, { status: 200 });
