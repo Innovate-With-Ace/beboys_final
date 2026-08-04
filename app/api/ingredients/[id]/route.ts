@@ -68,6 +68,7 @@ export async function DELETE(
       .eq("id", id);
 
     if (ingredientError) {
+      console.log(ingredientError.message);
       return NextResponse.json(
         { error: ingredientError.message },
         { status: 400 },
