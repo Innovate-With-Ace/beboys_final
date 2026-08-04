@@ -26,12 +26,14 @@ interface InviteStaffDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onInvite: (email: string, role: StaffRole) => void;
+  isPending: boolean;
 }
 
 export function InviteStaffDialog({
   open,
   onOpenChange,
   onInvite,
+  isPending,
 }: InviteStaffDialogProps) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<StaffRole>("Staff");
@@ -95,10 +97,13 @@ export function InviteStaffDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={isPending}
             >
               Cancel
             </Button>
-            <Button type="submit">Send Invite</Button>
+            <Button type="submit">
+              {isPending ? "Saving..." : "Send Invite"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
