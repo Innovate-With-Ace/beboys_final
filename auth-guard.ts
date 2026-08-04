@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
 export async function validateUser(allowedRoles?: string[]) {
-  const { userId, orgRole } = await auth();
+  const { userId, orgRole, orgId } = await auth();
 
   if (!userId) {
     return {
@@ -22,5 +22,5 @@ export async function validateUser(allowedRoles?: string[]) {
     }
   }
 
-  return { error: null, userId, orgRole };
+  return { error: null, userId, orgRole, orgId };
 }

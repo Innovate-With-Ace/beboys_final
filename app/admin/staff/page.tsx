@@ -18,63 +18,113 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Plus, Shield, Trash, Users } from "lucide-react";
+import {
+  MoreHorizontal,
+  Plus,
+  Shield,
+  Trash,
+  Users,
+  AlertCircle,
+} from "lucide-react";
+import fetchApi from "@/lib/api";
 
-// --- MOCK DATA (Remove when integrating backend) ---
-const mockStaffData: StaffMember[] = [
-  {
-    id: "1",
-    name: "Juan Dela Cruz",
-    email: "juan@beboys.com",
-    role: "Admin",
-    status: "Active",
-    avatarUrl: "https://i.pravatar.cc/150?u=juan",
-  },
-  {
-    id: "2",
-    name: "Maria Santos",
-    email: "maria@beboys.com",
-    role: "Staff",
-    status: "Active",
-  },
-  {
-    id: "3",
-    name: null, // Pending users might not have set up their name yet
-    email: "newguy@beboys.com",
-    role: "Staff",
-    status: "Pending",
-  },
-];
-// ---------------------------------------------------
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export default function StaffManagementPage() {
-  // --- UI STATES ---
-  const [staff, setStaff] = useState<StaffMember[]>(mockStaffData);
-  const [isLoading, setIsLoading] = useState(false); // Toggle this to see the skeleton
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
 
-  // --- CALLBACKS ---
-  const handleInvite = (email: string, role: StaffRole) => {
-    console.log("Inviting user:", { email, role });
-    // TODO: Wire up actual invite API call here
+  const {
+    data: staffData,
+    isLoading: staffIsLoading,
+    isError: staffIsError,
+  } = useQuery<StaffMember[]>({
+    queryKey: ["staffs"],
+    queryFn: async () => {
+      const response = await fetchApi<StaffMember[]>("/api/staff", {
+        method: "GET",
+      });
+      return response;
+    },
+  });
+
+  const createStaff = useMutation({
+    mutationFn: async (user: { email: string; role: StaffRole }) =>
+      fetchApi("/api/staff", { method: "POST", body: JSON.stringify(user) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staffs"] });
+      setIsInviteDialogOpen(false);
+      toast.success("User invited successfully");
+    },
+    onError: () => {
+      toast.error("Failed to invite user. Please try again.");
+    },
+  });
+
+  const updateStaff = useMutation({
+    mutationFn: async ({ id, role }: { id: string; role: StaffRole }) =>
+      fetchApi(`/api/staff/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ role }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staffs"] });
+      toast.success("User updated successfully");
+    },
+    onError: () => {
+      toast.error("Failed to update user. Please try again.");
+    },
+  });
+
+  const deleteStaff = useMutation({
+    mutationFn: async ({
+      id,
+      mode,
+    }: {
+      id: string;
+      mode: "delete" | "revoke";
+    }) =>
+      fetchApi(`/api/staff/${id}`, {
+        method: "DELETE",
+        body: JSON.stringify({ mode }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staffs"] });
+      toast.success("User deleted successfully");
+    },
+    onError: () => {
+      toast.error("Failed to delete user. Please try again.");
+    },
+  });
+
+  const handleInvite = async (email: string, role: StaffRole) => {
+    try {
+      await createStaff.mutateAsync({ email, role });
+    } catch (error) {}
   };
 
-  const handleChangeRole = (staffId: string, newRole: StaffRole) => {
-    console.log("Changing role for user", staffId, "to", newRole);
-    // TODO: Wire up actual role change API call here
+  const handleChangeRole = async (staffId: string, newRole: StaffRole) => {
+    try {
+      await updateStaff.mutateAsync({ id: staffId, role: newRole });
+    } catch (error) {}
   };
 
-  const handleRemove = (staffId: string) => {
-    console.log("Removing user:", staffId);
-    // TODO: Wire up actual delete API call here
+  const handleRemove = async (
+    invitationID: string,
+    mode: "delete" | "revoke",
+  ) => {
+    try {
+      await deleteStaff.mutateAsync({ id: invitationID, mode });
+    } catch (error) {}
   };
 
-  // --- HELPER ---
   const getInitials = (name: string | null, email: string) => {
     if (!name) return email.substring(0, 2).toUpperCase();
     return name
@@ -87,14 +137,13 @@ export default function StaffManagementPage() {
 
   return (
     <div className="flex-1 space-y-6">
-      {/* HEADER */}
       <div className="flex items-center justify-between space-y-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Staff Management
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Manage menu items, recipes, and real-time availability.
+            Manage your team members and their access levels.
           </p>
         </div>
         <Button onClick={() => setIsInviteDialogOpen(true)}>
@@ -103,7 +152,6 @@ export default function StaffManagementPage() {
         </Button>
       </div>
 
-      {/* TABLE / CONTENT */}
       <div className="rounded-md border bg-card">
         <Table>
           <TableHeader>
@@ -111,36 +159,61 @@ export default function StaffManagementPage() {
               <TableHead>Staff Member</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="w-[80px]"></TableHead>
+              <TableHead className="w-20"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              // LOADING SKELETON STATE
+            {staffIsLoading ? (
               Array.from({ length: 3 }).map((_, idx) => (
                 <TableRow key={idx}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Skeleton className="h-10 w-10 rounded-full" />
                       <div className="space-y-2">
-                        <Skeleton className="h-4 w-[150px]" />
-                        <Skeleton className="h-3 w-[100px]" />
+                        <Skeleton className="h-4 w-37.5" />
+                        <Skeleton className="h-3 w-20" />
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-5 w-[60px] rounded-full" />
+                    <Skeleton className="h-5 w-15 rounded-full" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-5 w-[70px] rounded-full" />
+                    <Skeleton className="h-5 w-17.5 rounded-full" />
                   </TableCell>
                   <TableCell>
                     <Skeleton className="h-8 w-8 rounded-md" />
                   </TableCell>
                 </TableRow>
               ))
-            ) : staff.length === 0 ? (
-              // EMPTY STATE
+            ) : staffIsError ? (
+              <TableRow>
+                <TableCell colSpan={4} className="h-64 text-center">
+                  <div className="flex flex-col items-center justify-center space-y-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                      <AlertCircle className="h-6 w-6" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-base font-semibold">
+                        Failed to load staff
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Could not retrieve team members at this time.
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        queryClient.invalidateQueries({ queryKey: ["staffs"] })
+                      }
+                      className="mt-2"
+                    >
+                      Try Again
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : !staffData || staffData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="h-64 text-center">
                   <div className="flex flex-col items-center justify-center space-y-3">
@@ -167,8 +240,7 @@ export default function StaffManagementPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              // POPULATED STATE
-              staff.map((member) => (
+              staffData.map((member) => (
                 <TableRow key={member.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -231,31 +303,41 @@ export default function StaffManagementPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
+                        <DropdownMenuGroup>
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
 
-                        {/* Dynamic Role Change Button */}
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleChangeRole(
-                              member.id,
-                              member.role === "Admin" ? "Staff" : "Admin",
-                            )
-                          }
-                        >
-                          <Shield className="mr-2 h-4 w-4" />
-                          Make {member.role === "Admin" ? "Staff" : "Admin"}
-                        </DropdownMenuItem>
+                          {member.userID && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleChangeRole(
+                                  member.userID,
+                                  member.role === "Admin" ? "Staff" : "Admin",
+                                )
+                              }
+                            >
+                              <Shield className="mr-2 h-4 w-4" />
+                              Make {member.role === "Admin" ? "Staff" : "Admin"}
+                            </DropdownMenuItem>
+                          )}
 
-                        <DropdownMenuSeparator />
+                          <DropdownMenuSeparator />
 
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                          onClick={() => handleRemove(member.id)}
-                        >
-                          <Trash className="mr-2 h-4 w-4" />
-                          Remove User
-                        </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                            onClick={() =>
+                              handleRemove(
+                                member.id,
+                                member.userID ? "delete" : "revoke",
+                              )
+                            }
+                          >
+                            <Trash className="mr-2 h-4 w-4" />
+                            {member.userID
+                              ? "Remove User"
+                              : "Revoke Invitation"}
+                          </DropdownMenuItem>
+                        </DropdownMenuGroup>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -270,6 +352,7 @@ export default function StaffManagementPage() {
         open={isInviteDialogOpen}
         onOpenChange={setIsInviteDialogOpen}
         onInvite={handleInvite}
+        isPending={createStaff.isPending}
       />
     </div>
   );
