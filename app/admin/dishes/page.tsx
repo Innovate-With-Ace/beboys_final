@@ -242,7 +242,7 @@ const Page = () => {
   const isSaving = createDish.isPending || updateDish.isPending;
 
   return (
-    <div className="max-w-7xl space-y-6 p-4">
+    <div className="max-w-7xl space-y-6">
       {/* Top Bar Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border/60">
         <div>
