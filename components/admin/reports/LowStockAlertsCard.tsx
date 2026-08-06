@@ -1,13 +1,18 @@
 import React from "react";
 import { AlertTriangle } from "lucide-react";
+import { supabaseAdmin } from "@/lib/supabase/server";
 
-export function LowStockAlertsCard() {
-  const lowStockItems = [
-    { name: "Chicken Breast (kg)", stock: 3.5, unit: "kg", threshold: 5.0 },
-    { name: "Cooking Oil (L)", stock: 2.0, unit: "L", threshold: 10.0 },
-    { name: "Jasmine Rice (sack)", stock: 1, unit: "sack", threshold: 3 },
-    { name: "Garlic (kg)", stock: 0.8, unit: "kg", threshold: 2.0 },
-  ];
+export async function LowStockAlertsCard() {
+  const { data, error } = await supabaseAdmin
+    .from("ingredients")
+    .select("id, name, stock, unit, low_stock_threshold");
+
+  const lowStockItems = (data ?? [])
+    .filter((i) => i.stock <= i.low_stock_threshold)
+    .sort(
+      (a, b) =>
+        a.stock / a.low_stock_threshold - b.stock / b.low_stock_threshold,
+    );
 
   return (
     <div className="rounded-xl border bg-card p-5 shadow-xs text-card-foreground flex flex-col justify-between">
@@ -56,10 +61,10 @@ export function LowStockAlertsCard() {
           </table>
         </div>
       </div>
-      <div className="mt-4 pt-3 border-t border-border/40 text-xs text-muted-foreground flex justify-between items-center">
-        <span>4 items need attention</span>
-        <span className="text-primary font-medium cursor-pointer hover:underline">
-          Create Purchase Order &rarr;
+      <div className="mt-4 pt-3 border-t border-border/40 text-xs text-muted-foreground">
+        <span>
+          {lowStockItems.length} {lowStockItems.length === 1 ? "item" : "items"}{" "}
+          need attention
         </span>
       </div>
     </div>

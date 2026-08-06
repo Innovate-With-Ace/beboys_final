@@ -1,7 +1,19 @@
-import React from "react";
+// components/admin/reports/AverageOrderValueCard.tsx
 import { DollarSign } from "lucide-react";
+import { supabaseAdmin } from "@/lib/supabase/server";
 
-export function AverageOrderValueCard() {
+export async function AverageOrderValueCard() {
+  const { data, error } = await supabaseAdmin
+    .from("average_order_value")
+    .select("*")
+    .single();
+
+  if (error) {
+    console.error("Error fetching average order value:", error.message);
+  }
+
+  const aov = data?.aov ?? 0;
+
   return (
     <div className="rounded-xl border bg-card p-5 shadow-xs text-card-foreground flex flex-col justify-between">
       <div className="flex items-center justify-between mb-2">
@@ -19,19 +31,17 @@ export function AverageOrderValueCard() {
       </div>
 
       <div className="my-6 flex flex-col items-center justify-center text-center">
-        <span className="text-4xl sm:text-5xl font-extrabold tracking-tight text-foreground">
-          ₱828.50
-        </span>
-        <span className="text-xs text-emerald-600 font-medium mt-2 flex items-center gap-1">
-          &uarr; 4.2% higher than industry baseline
+        <span className="text-4xl sm:text-5xl font-extrabold tracking-tight text-brand-primary">
+          ₱
+          {Number(aov).toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
         </span>
       </div>
 
       <div className="pt-3 border-t border-border/40 text-xs text-muted-foreground flex justify-between items-center">
         <span>Calculation Basis: Total Revenue / Total Completed Orders</span>
-        <span className="text-primary font-medium cursor-pointer hover:underline">
-          Deep dive &rarr;
-        </span>
       </div>
     </div>
   );
