@@ -7,7 +7,6 @@ import { OrderVolumeCard } from "@/components/admin/reports/OrderVolumeCard";
 import { ReportsHeader } from "@/components/admin/reports/ReportsHeader";
 import { RevenueChartCard } from "@/components/admin/reports/RevenueChartCard";
 import { SalesByCategoryCard } from "@/components/admin/reports/SalesByCategoryCard";
-import { WastedServingsCard } from "@/components/admin/reports/WastedServingsCard";
 
 interface ReportsPageProps {
   searchParams: Promise<{
