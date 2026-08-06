@@ -1,14 +1,13 @@
-import React from "react";
+import { AverageOrderValueCard } from "@/components/admin/reports/AverageOrderValueCard";
+import { BestSellingDishesCard } from "@/components/admin/reports/BestSellingDishesCard";
+import { IngredientUsageCard } from "@/components/admin/reports/IngredientUsageCard";
+import { LowStockAlertsCard } from "@/components/admin/reports/LowStockAlertsCard";
+import { OrderStatusCard } from "@/components/admin/reports/OrderStatusCard";
+import { OrderVolumeCard } from "@/components/admin/reports/OrderVolumeCard";
 import { ReportsHeader } from "@/components/admin/reports/ReportsHeader";
 import { RevenueChartCard } from "@/components/admin/reports/RevenueChartCard";
-import { BestSellingDishesCard } from "@/components/admin/reports/BestSellingDishesCard";
 import { SalesByCategoryCard } from "@/components/admin/reports/SalesByCategoryCard";
-import { OrderVolumeCard } from "@/components/admin/reports/OrderVolumeCard";
-import { LowStockAlertsCard } from "@/components/admin/reports/LowStockAlertsCard";
-import { IngredientUsageCard } from "@/components/admin/reports/IngredientUsageCard";
 import { WastedServingsCard } from "@/components/admin/reports/WastedServingsCard";
-import { OrderStatusCard } from "@/components/admin/reports/OrderStatusCard";
-import { AverageOrderValueCard } from "@/components/admin/reports/AverageOrderValueCard";
 
 export default function ReportsPage() {
   return (
