@@ -52,6 +52,8 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // Optional: You can remove this check entirely if you no longer
+      // rely on servings_left to validate orders during checkout
       if (dish.servings_left < i.quantity) {
         return NextResponse.json(
           {
@@ -107,78 +109,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const stockUpdates = orderItems.map((item) => {
-      const dish = dishes.find((d) => d.id === item.dish_id);
-      return supabaseAdmin
-        .from("dishes")
-        .update({ servings_left: dish!.servings_left - item.quantity })
-        .eq("id", item.dish_id);
-    });
-
-    await Promise.all(stockUpdates);
-
-    const { data: recipes, error: recipeError } = await supabaseAdmin
-      .from("dish_ingredients")
-      .select("dish_id, ingredient_id, quantity")
-      .in("dish_id", dishIDs);
-
-    if (recipeError) {
-      return NextResponse.json(
-        { error: "Failed to load recipes" },
-        { status: 500 },
-      );
-    }
-
-    const ingredientIDs = [
-      ...new Set((recipes ?? []).map((r) => r.ingredient_id)),
-    ];
-
-    if (ingredientIDs.length > 0) {
-      const { data: ingredients, error: ingredientsError } = await supabaseAdmin
-        .from("ingredients")
-        .select("id, stock")
-        .in("id", ingredientIDs);
-
-      if (ingredientsError) {
-        return NextResponse.json(
-          { error: "Failed to load ingredients" },
-          { status: 500 },
-        );
-      }
-
-      const consumption: Record<string, number> = {};
-
-      for (const item of orderItems) {
-        const dishRecipe = (recipes ?? []).filter(
-          (r) => r.dish_id === item.dish_id,
-        );
-
-        for (const recipeRow of dishRecipe) {
-          const consumed = recipeRow.quantity * item.quantity;
-          consumption[recipeRow.ingredient_id] =
-            (consumption[recipeRow.ingredient_id] ?? 0) + consumed;
-        }
-      }
-
-      const ingredientUpdates = Object.entries(consumption).map(
-        ([ingredientId, consumedAmount]) => {
-          const ingredient = (ingredients ?? []).find(
-            (i) => i.id === ingredientId,
-          );
-          const newStock = Math.max(
-            0,
-            (ingredient?.stock ?? 0) - consumedAmount,
-          );
-
-          return supabaseAdmin
-            .from("ingredients")
-            .update({ stock: newStock })
-            .eq("id", ingredientId);
-        },
-      );
-
-      await Promise.all(ingredientUpdates);
-    }
+    // NOTE: All stock and ingredient deduction logic has been removed from here.
 
     return NextResponse.json(order, { status: 201 });
   } catch (err) {

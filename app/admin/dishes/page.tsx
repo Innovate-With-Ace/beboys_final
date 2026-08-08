@@ -81,6 +81,8 @@ const Page = () => {
       }),
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ["dishes"] });
+      queryClient.invalidateQueries({ queryKey: ["ingredients"] });
+
       close();
       toast.success("Dish added successfully");
     },
@@ -97,6 +99,7 @@ const Page = () => {
       }),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ["dishes"] });
+      queryClient.invalidateQueries({ queryKey: ["ingredients"] });
       close();
     },
     onError: () => {

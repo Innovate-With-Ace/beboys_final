@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
     if (error) {
       return error;
     }
-    const body: Dish = await req.json();
 
+    const body = await req.json();
     const result = dishSchema.safeParse(body);
 
     if (!result.success) {
@@ -38,8 +38,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: dishError.message }, { status: 400 });
     }
 
-    // 2. Loop through the validated ingredients and insert/upsert them
+    // 2. Loop through the validated ingredients to link them AND deduct stock
     for (const ing of ingredients ?? []) {
+      // 2a. Insert/Upsert into dish_ingredients
       const { error: ingError } = await supabaseAdmin
         .from("dish_ingredients")
         .upsert({
@@ -51,6 +52,45 @@ export async function POST(req: NextRequest) {
       if (ingError) {
         console.log(ingError.message);
         return NextResponse.json({ error: ingError.message }, { status: 400 });
+      }
+
+      // 2b. NEW: Deduct the ingredient quantity from stock directly upon dish creation
+      // Fetch current stock
+      const { data: currentItem, error: fetchError } = await supabaseAdmin
+        .from("ingredients")
+        .select("stock")
+        .eq("id", ing.ingredient_id)
+        .single();
+
+      if (fetchError) {
+        console.error(
+          `Error fetching ingredient ${ing.ingredient_id}:`,
+          fetchError.message,
+        );
+        return NextResponse.json(
+          { error: "Failed to fetch ingredient stock" },
+          { status: 500 },
+        );
+      }
+
+      const currentStock = currentItem?.stock ?? 0;
+      const newStock = Math.max(0, currentStock - ing.quantity);
+
+      // Update the new deducted stock
+      const { error: updateError } = await supabaseAdmin
+        .from("ingredients")
+        .update({ stock: newStock })
+        .eq("id", ing.ingredient_id);
+
+      if (updateError) {
+        console.error(
+          `Error deducting stock for ${ing.ingredient_id}:`,
+          updateError.message,
+        );
+        return NextResponse.json(
+          { error: "Failed to deduct ingredient stock" },
+          { status: 500 },
+        );
       }
     }
 
