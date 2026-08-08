@@ -63,7 +63,7 @@ const OrdersTable = ({ orders = [] }: Props) => {
           <TableRow className="hover:bg-transparent">
             <TableHead className="w-[90px] font-semibold">Order ID</TableHead>
             <TableHead className="font-semibold">Items</TableHead>
-            <TableHead className="font-semibold">Cashier</TableHead>
+            <TableHead className="font-semibold">Name</TableHead>
             <TableHead className="font-semibold text-right">Total</TableHead>
             <TableHead className="text-center font-semibold w-[120px]">
               Status
@@ -105,7 +105,7 @@ const OrdersTable = ({ orders = [] }: Props) => {
                 </TableCell>
 
                 <TableCell className="text-sm">
-                  {order.cashier_id || "System"}
+                  {order.cashier_name || "System"}
                 </TableCell>
 
                 <TableCell className="text-right font-semibold text-foreground">
