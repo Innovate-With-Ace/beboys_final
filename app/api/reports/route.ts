@@ -25,8 +25,6 @@ export async function GET(req: NextRequest) {
       .lte("day", endDate)
       .order("day", { ascending: true });
 
-    console.log("DATA : ", JSON.stringify(data));
-
     if (revenueError) {
       return NextResponse.json(
         { error: revenueError.message },
