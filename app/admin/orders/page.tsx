@@ -30,7 +30,7 @@ const Page = () => {
         .includes(lowerCaseQuery);
 
       // Check Cashier (fallback to 'system' if undefined)
-      const matchesCashier = (order.cashier_id || "system")
+      const matchesCashier = (order.cashier_name || "system")
         .toLowerCase()
         .includes(lowerCaseQuery);
 
