@@ -32,7 +32,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { error } = await validateUser(["org:admin", "org:staff"]);
+    // Creating/editing inventory items is an admin action — staff can view
+    // stock (GET) but shouldn't be able to change it directly.
+    const { error } = await validateUser(["org:admin"]);
 
     if (error) return error;
     const body = await req.json();

@@ -1,7 +1,6 @@
 import { validateUser } from "@/auth-guard";
 import { dishSchema } from "@/lib/schemas/dish";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { Dish } from "@/types/Dish";
 import { NextResponse, NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -16,7 +15,6 @@ export async function POST(req: NextRequest) {
     const result = dishSchema.safeParse(body);
 
     if (!result.success) {
-      console.log(result.error.issues[0].message);
       return NextResponse.json(
         { error: result.error.issues[0].message },
         { status: 400 },
@@ -26,72 +24,26 @@ export async function POST(req: NextRequest) {
     // Separate ingredients from dish details
     const { ingredients, ...dishData } = result.data;
 
-    // 1. Insert the dish (Spread dishData properly instead of wrapping it)
-    const { data, error: dishError } = await supabaseAdmin
-      .from("dishes")
-      .insert({ ...dishData, image: null })
-      .select()
-      .single();
+    // Insert the dish + its dish_ingredients links, and deduct raw
+    // ingredient stock for this batch — atomically. Ingredient stock is
+    // consumed here (when the batch is cooked), not at sale time; sale
+    // only decrements dishes.servings_left (see app/api/pos/route.ts).
+    const { data, error: rpcError } = await supabaseAdmin.rpc(
+      "create_dish_with_ingredients",
+      {
+        p_name: dishData.name,
+        p_price: dishData.price,
+        p_servings: dishData.servings,
+        p_servings_left: dishData.servings_left,
+        p_category_id: dishData.category_id,
+        p_is_available: dishData.is_available,
+        p_ingredients: ingredients ?? [],
+      },
+    );
 
-    if (dishError) {
-      console.log(dishError.message);
-      return NextResponse.json({ error: dishError.message }, { status: 400 });
-    }
-
-    // 2. Loop through the validated ingredients to link them AND deduct stock
-    for (const ing of ingredients ?? []) {
-      // 2a. Insert/Upsert into dish_ingredients
-      const { error: ingError } = await supabaseAdmin
-        .from("dish_ingredients")
-        .upsert({
-          dish_id: data.id,
-          ingredient_id: ing.ingredient_id,
-          quantity: ing.quantity,
-        });
-
-      if (ingError) {
-        console.log(ingError.message);
-        return NextResponse.json({ error: ingError.message }, { status: 400 });
-      }
-
-      // 2b. NEW: Deduct the ingredient quantity from stock directly upon dish creation
-      // Fetch current stock
-      const { data: currentItem, error: fetchError } = await supabaseAdmin
-        .from("ingredients")
-        .select("stock")
-        .eq("id", ing.ingredient_id)
-        .single();
-
-      if (fetchError) {
-        console.error(
-          `Error fetching ingredient ${ing.ingredient_id}:`,
-          fetchError.message,
-        );
-        return NextResponse.json(
-          { error: "Failed to fetch ingredient stock" },
-          { status: 500 },
-        );
-      }
-
-      const currentStock = currentItem?.stock ?? 0;
-      const newStock = Math.max(0, currentStock - ing.quantity);
-
-      // Update the new deducted stock
-      const { error: updateError } = await supabaseAdmin
-        .from("ingredients")
-        .update({ stock: newStock })
-        .eq("id", ing.ingredient_id);
-
-      if (updateError) {
-        console.error(
-          `Error deducting stock for ${ing.ingredient_id}:`,
-          updateError.message,
-        );
-        return NextResponse.json(
-          { error: "Failed to deduct ingredient stock" },
-          { status: 500 },
-        );
-      }
+    if (rpcError) {
+      console.error(rpcError.message);
+      return NextResponse.json({ error: rpcError.message }, { status: 400 });
     }
 
     return NextResponse.json(data, { status: 201 });

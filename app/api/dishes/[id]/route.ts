@@ -104,7 +104,6 @@ export async function DELETE(
       .eq("id", id);
 
     if (dishError) {
-      console.log("Error deleting dish:", dishError.message);
       return NextResponse.json({ error: dishError.message }, { status: 400 });
     }
 

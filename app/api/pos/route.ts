@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { OrderItem } from "@/types/OrderItem";
 import { validateUser } from "@/auth-guard";
 import { orderInputSchema } from "@/lib/schemas/order";
 
@@ -25,91 +24,33 @@ export async function POST(req: NextRequest) {
     }
 
     const validBody = result.data;
-    const dishIDs = validBody.items.map((item) => item.item.id);
 
-    const { data: dishes, error: dishesError } = await supabaseAdmin
-      .from("dishes")
-      .select("id, name, price, servings_left")
-      .in("id", dishIDs);
+    // Order creation, order_items insert, and decrementing
+    // dishes.servings_left all happen atomically inside create_pos_order
+    // (one Postgres transaction, with the dish rows locked to prevent
+    // overselling under concurrent checkouts). Raw ingredient stock is
+    // NOT touched here — it was already deducted when the dish/batch was
+    // created (see app/api/dishes/route.ts).
+    const { data: order, error: rpcError } = await supabaseAdmin.rpc(
+      "create_pos_order",
+      {
+        p_cashier_id: userId,
+        p_source: validBody.source,
+        p_items: validBody.items.map((i) => ({
+          dish_id: i.item.id,
+          quantity: i.quantity,
+        })),
+      },
+    );
 
-    if (!dishes || dishesError) {
-      return NextResponse.json(
-        { error: "Failed to load dishes" },
-        { status: 500 },
-      );
+    if (rpcError) {
+      // Postgres RAISE EXCEPTION messages (not found / insufficient stock)
+      // surface here as rpcError.message.
+      const status = /not found|not enough stock/i.test(rpcError.message)
+        ? 400
+        : 500;
+      return NextResponse.json({ error: rpcError.message }, { status });
     }
-
-    const orderItems: OrderItem[] = [];
-    let total = 0;
-
-    for (const i of validBody.items) {
-      const dish = dishes.find((d) => d.id === i.item.id);
-
-      if (!dish) {
-        return NextResponse.json(
-          { error: `Dish ${i.item.name ?? "Unknown"} not found.` },
-          { status: 404 },
-        );
-      }
-
-      // Optional: You can remove this check entirely if you no longer
-      // rely on servings_left to validate orders during checkout
-      if (dish.servings_left < i.quantity) {
-        return NextResponse.json(
-          {
-            error: `Not enough stock for ${dish.name}. Only ${dish.servings_left} left.`,
-          },
-          { status: 400 },
-        );
-      }
-
-      orderItems.push({
-        dish_id: dish.id,
-        name: dish.name,
-        price: dish.price,
-        quantity: i.quantity,
-      });
-
-      total += dish.price * i.quantity;
-    }
-
-    const { data: order, error: orderError } = await supabaseAdmin
-      .from("orders")
-      .insert({
-        cashier_id: userId,
-        total,
-        status: validBody.source === "pos" ? "completed" : "pending",
-      })
-      .select()
-      .single();
-
-    if (!order || orderError) {
-      return NextResponse.json(
-        { error: "Failed to create order" },
-        { status: 500 },
-      );
-    }
-
-    const itemsToInsert = orderItems.map((item) => ({
-      order_id: order.id,
-      dish_id: item.dish_id,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-    }));
-
-    const { error: itemsError } = await supabaseAdmin
-      .from("order_items")
-      .insert(itemsToInsert);
-
-    if (itemsError) {
-      return NextResponse.json(
-        { error: "Failed to save order details" },
-        { status: 500 },
-      );
-    }
-
-    // NOTE: All stock and ingredient deduction logic has been removed from here.
 
     return NextResponse.json(order, { status: 201 });
   } catch (err) {

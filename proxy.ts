@@ -7,7 +7,15 @@ export default clerkMiddleware(async (auth, req) => {
   const isAdminRoute = path.startsWith("/admin");
   const isStaffRoute = path.startsWith("/pos");
 
+  console.log(orgRole);
+
   if (path.startsWith("/api")) {
+    // Baseline check only: every route still calls validateUser() itself
+    // for role-level checks. This just guarantees no /api route can ever
+    // be fully open if one forgets to call validateUser().
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.next();
   }
 

@@ -67,7 +67,6 @@ export async function DELETE(
       .eq("id", id);
 
     if (categoriesError) {
-      console.log(categoriesError);
       return NextResponse.json(
         { error: categoriesError.message },
         { status: 400 },

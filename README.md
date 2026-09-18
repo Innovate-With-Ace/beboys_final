@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Beboy's POS
 
-## Getting Started
+Restaurant POS/admin system: dishes, inventory, orders, staff, and reports.
+Built with Next.js, Supabase, and Clerk.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Next.js (App Router) + TypeScript
+- Supabase (Postgres) via `@supabase/supabase-js`, admin client only (service role)
+- Clerk for auth, with organization roles `org:admin` and `org:staff`
+- Zustand for client-side cart/dish editor state
+- TanStack Query for server-state caching
+- Zod for input validation
+
+## Environment variables
+
+Create a `.env.local` with:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`SUPABASE_SERVICE_ROLE_KEY` is server-only — every DB call goes through
+`supabaseAdmin` in `lib/supabase/server.ts`, so API routes are the only
+thing enforcing access control (see Role model below). Never expose the
+service role key to the client.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Role model
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Two Clerk organization roles:
 
-## Learn More
+- `org:admin` — full access: dishes, ingredients, categories, staff, reports.
+- `org:staff` — POS checkout, dish/ingredient/category read access. Cannot
+  create or edit ingredients (admin-only, see `app/api/ingredients/route.ts`
+  and `[id]/route.ts`).
 
-To learn more about Next.js, take a look at the following resources:
+Enforcement happens at two layers:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. `proxy.ts` — baseline check: any request under `/api` with no signed-in
+   user is rejected with 401 before it reaches a route. Page routes
+   (`/admin`, `/pos`) redirect to `/login` or `/no-access` based on role.
+2. Each API route additionally calls `validateUser([...allowedRoles])`
+   (`auth-guard.ts`) for role-level granularity. The middleware check is a
+   safety net, not a replacement for this — every new route must still
+   call `validateUser`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Database: RPCs
 
-## Deploy on Vercel
+Two multi-step writes are implemented as Postgres functions
+(`supabase/migrations/0001_atomic_order_and_dish_writes.sql`) instead of
+sequential client-side calls, so they're transactional:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `create_dish_with_ingredients(...)` — inserts a dish (a cooked batch)
+  and its `dish_ingredients` rows, and deducts raw `ingredients.stock` by
+  recipe quantity. This is where ingredient stock moves — **when the
+  batch is cooked**, since this eatery doesn't track ingredient
+  consumption per sale, only per batch.
+- `create_pos_order(p_cashier_id, p_source, p_items)` — validates
+  `dishes.servings_left`, inserts the order + order_items, and decrements
+  `servings_left` (how many portions of the already-cooked batch remain).
+  Does **not** touch ingredient stock — that was already deducted at
+  creation.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Run the migration in the Supabase SQL editor (or via the Supabase CLI)
+before deploying.
+
+## Getting started
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).

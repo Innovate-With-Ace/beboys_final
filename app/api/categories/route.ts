@@ -15,7 +15,6 @@ export async function GET(req: NextRequest) {
       .order("label", { ascending: true });
 
     if (categoriesError) {
-      console.log(categoriesError.message);
       return NextResponse.json(
         { error: categoriesError.message },
         { status: 500 },
@@ -57,7 +56,6 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (categoriesError) {
-      console.log(categoriesError);
       return NextResponse.json(
         { error: categoriesError.message },
         { status: 500 },

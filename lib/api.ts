@@ -8,7 +8,16 @@ export default async function fetchApi<T>(url: string, options: RequestInit): Pr
     });
 
     if (!res.ok) {
-        throw new Error(`API Error: ${res.statusText}`);
+        // API routes return { error: "..." } — surface that message instead
+        // of the generic HTTP status text ("Bad Request", etc).
+        let message = res.statusText;
+        try {
+            const body = await res.json();
+            if (body?.error) message = body.error;
+        } catch {
+            // response wasn't JSON — fall back to statusText
+        }
+        throw new Error(message);
     }
 
     return res.json();
