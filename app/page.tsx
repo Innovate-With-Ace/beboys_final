@@ -238,10 +238,12 @@ export default async function Page() {
 
               {/* Right: The Board Card */}
               <div id="menu" className="scroll-mt-32">
-                <div className="relative rounded-3xl border border-border bg-card p-8 shadow-2xl sm:p-10">
-                  <div className="flex items-center justify-between border-b border-border/50 pb-6">
-                    <h2 className="lp-display text-2xl">Today&apos;s Lineup</h2>
-                    <span className="lp-chalk-hand text-xl text-muted-foreground rotate-2">
+                <article className="relative rounded-3xl border border-border bg-card p-6 shadow-2xl sm:p-8 lg:p-10">
+                  <div className="flex items-center justify-between border-b border-border/50 pb-5 sm:pb-6">
+                    <h2 className="lp-display text-xl sm:text-2xl">
+                      Today&apos;s Lineup
+                    </h2>
+                    <span className="lp-chalk-hand text-lg text-muted-foreground rotate-2 sm:text-xl">
                       {new Date().toLocaleDateString("en-US", {
                         weekday: "long",
                       })}
@@ -258,36 +260,54 @@ export default async function Page() {
                       </p>
                     </div>
                   ) : (
-                    <div className="mt-6 space-y-8">
+                    <div className="mt-6 space-y-7 sm:space-y-8">
                       {board.map((group) => (
                         <div key={group.label}>
                           {board.length > 1 && (
-                            <p className="text-xs font-bold uppercase tracking-widest text-primary mb-4">
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-primary mb-4">
                               {group.label}
-                            </p>
+                            </h3>
                           )}
-                          <ul className="space-y-4">
+                          <ul className="space-y-3 sm:space-y-4">
                             {group.items.map((dish) => {
                               const soldOut = dish.servings_left <= 0;
+                              const lowStock =
+                                !soldOut && dish.servings_left <= 3;
                               return (
                                 <li
                                   key={dish.id}
-                                  className={`group flex items-center justify-between gap-4 transition-opacity ${
+                                  className={`group flex items-center gap-3 rounded-xl transition-opacity sm:gap-4 ${
                                     soldOut ? "opacity-50" : ""
                                   }`}
                                 >
-                                  <span className="lp-chalk-hand text-2xl font-medium tracking-wide">
-                                    {dish.name}
-                                  </span>
-                                  <div className="h-[1px] flex-1 bg-gradient-to-r from-border to-transparent opacity-50" />
+                                  <div
+                                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 sm:h-10 sm:w-10"
+                                    aria-hidden="true"
+                                  >
+                                    <Soup className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <span className="lp-chalk-hand block truncate text-xl font-medium tracking-wide sm:text-2xl">
+                                      {dish.name}
+                                    </span>
+                                    {lowStock && (
+                                      <span className="text-xs font-semibold text-warning">
+                                        Only {dish.servings_left} left
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="hidden h-[1px] flex-1 bg-gradient-to-r from-border to-transparent opacity-50 sm:block" />
                                   {soldOut ? (
-                                    <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                                    <span className="shrink-0 rounded-md bg-muted px-2 py-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                                       Sold Out
                                     </span>
                                   ) : (
-                                    <span className="font-semibold text-brand-secondary">
+                                    <data
+                                      value={dish.price}
+                                      className="shrink-0 font-mono font-semibold text-brand-secondary"
+                                    >
                                       {peso.format(dish.price)}
-                                    </span>
+                                    </data>
                                   )}
                                 </li>
                               );
@@ -303,7 +323,7 @@ export default async function Page() {
                       out.
                     </p>
                   </div>
-                </div>
+                </article>
               </div>
             </div>
           </div>
