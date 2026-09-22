@@ -226,8 +226,8 @@ export default function AcceptInviteContent() {
               </h2>
               <p className="text-sm text-muted-foreground">{errorMessage}</p>
             </div>
-            <Button className="mt-4 w-full">
-              <Link href="/login">Return to Login</Link>
+            <Button className="mt-4 w-full" render={<Link href="/login" />}>
+              Return to Login
             </Button>
           </div>
         )}

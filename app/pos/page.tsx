@@ -14,11 +14,18 @@ import OrderSummaryDialog from "@/components/pos/OrderSummaryDialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Soup, ClipboardList, Search, Loader2 } from "lucide-react";
+import {
+  Soup,
+  ClipboardList,
+  Search,
+  Loader2,
+  ReceiptText,
+} from "lucide-react";
 import { CartItem } from "@/types/CartItem";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import fetchApi from "@/lib/api";
 import { useCartStore } from "@/stores/CartStore";
+import { useOrders } from "@/hooks/useOrders";
 
 const Page = () => {
   const router = useRouter();
@@ -32,7 +39,13 @@ const Page = () => {
   const { clearItem } = useCartStore();
 
   // POS Session State (Keep this if you track daily setup in Zustand)
-  const servingsSetToday = useDishStore((s) => s.servingSetToday);
+
+  // Live order count for the "Orders" nav badge — lets staff see there's
+  // something waiting without having to open the queue first.
+  const { data: orders = [] } = useOrders({ refetchInterval: 15000 });
+  const activeOrderCount = orders.filter(
+    (o) => o.status === "pending" || o.status === "preparing",
+  ).length;
 
   // Real-time Data from TanStack Query
   const { data: dishes = [], isLoading: isDishesLoading } = useDishes();
@@ -109,13 +122,20 @@ const Page = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Use Next.js Link instead of standard <a> tag for faster client-side routing */}
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8">
-            <Link href="/pos/setup">
-              <ClipboardList className="h-3.5 w-3.5 text-muted-foreground" />
-              Set servings
-            </Link>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs h-8 relative"
+            render={<Link href="/pos/orders" />}
+          >
+            <ReceiptText className="h-3.5 w-3.5 text-muted-foreground" />
+            Orders
+            {activeOrderCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 h-4.5 min-w-4.5 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                {activeOrderCount}
+              </span>
+            )}
           </Button>
           <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold shadow-sm">
             A

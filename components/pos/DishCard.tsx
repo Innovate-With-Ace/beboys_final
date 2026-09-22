@@ -5,16 +5,24 @@ import { Dish } from "@/types/Dish";
 import { Card, CardContent, CardFooter } from "../ui/card";
 import { Button } from "../ui/button";
 import Image from "next/image";
-import { Plus, Soup } from "lucide-react";
+import { Plus, Minus, Soup } from "lucide-react";
 
 type Props = {
   dish: Dish;
   onAdd: () => void;
+  onDecrement?: () => void;
+  quantityInCart?: number;
 };
 
-const DishCard = ({ dish, onAdd }: Props) => {
+const DishCard = ({
+  dish,
+  onAdd,
+  onDecrement,
+  quantityInCart = 0,
+}: Props) => {
   const isSoldOut = dish.servings_left === 0;
   const isLow = dish.servings_left > 0 && dish.servings_left <= 3;
+  const isAtCartLimit = quantityInCart >= dish.servings_left;
 
   return (
     <Card
@@ -48,6 +56,11 @@ const DishCard = ({ dish, onAdd }: Props) => {
             ONLY {dish.servings_left} LEFT
           </div>
         )}
+        {quantityInCart > 0 && (
+          <div className="absolute top-2 left-2 h-6 min-w-6 px-1.5 rounded-full bg-brand-primary text-white text-xs font-bold flex items-center justify-center shadow-sm">
+            {quantityInCart}
+          </div>
+        )}
       </div>
 
       <CardContent className="space-y-1.5 pt-3 px-3">
@@ -69,19 +82,44 @@ const DishCard = ({ dish, onAdd }: Props) => {
       </CardContent>
 
       <CardFooter className="pt-2 px-3">
-        <Button
-          onClick={onAdd}
-          disabled={isSoldOut}
-          size="sm"
-          className={`w-full gap-1.5 font-semibold transition-all rounded-xl ${
-            isSoldOut
-              ? "bg-bg text-muted-foreground border border-border shadow-none"
-              : "bg-brand-primary text-white hover:bg-brand-primary/90 shadow-sm active:scale-[0.98]"
-          }`}
-        >
-          <Plus className="h-4 w-4" />
-          {isSoldOut ? "Unavailable" : "Add to Order"}
-        </Button>
+        {quantityInCart > 0 && !isSoldOut ? (
+          <div className="w-full flex items-center justify-between bg-brand-primary/10 border border-brand-primary/30 rounded-xl p-1">
+            <Button
+              onClick={onDecrement}
+              size="icon-sm"
+              variant="ghost"
+              className="text-brand-primary hover:bg-brand-primary/20 shrink-0"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </Button>
+            <span className="text-sm font-bold text-brand-primary">
+              {quantityInCart} in order
+            </span>
+            <Button
+              onClick={onAdd}
+              disabled={isAtCartLimit}
+              size="icon-sm"
+              variant="ghost"
+              className="text-brand-primary hover:bg-brand-primary/20 shrink-0 disabled:opacity-30"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        ) : (
+          <Button
+            onClick={onAdd}
+            disabled={isSoldOut}
+            size="sm"
+            className={`w-full gap-1.5 font-semibold transition-all rounded-xl ${
+              isSoldOut
+                ? "bg-bg text-muted-foreground border border-border shadow-none"
+                : "bg-brand-primary text-white hover:bg-brand-primary/90 shadow-sm active:scale-[0.98]"
+            }`}
+          >
+            <Plus className="h-4 w-4" />
+            {isSoldOut ? "Unavailable" : "Add to Order"}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

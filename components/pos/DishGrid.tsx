@@ -11,7 +11,7 @@ type Props = {
 };
 
 const DishGrid = ({ dishes }: Props) => {
-  const { addItem } = useCartStore();
+  const { items, addItem, decrementQuantity } = useCartStore();
 
   if (dishes.length === 0) {
     return (
@@ -21,7 +21,7 @@ const DishGrid = ({ dishes }: Props) => {
         </div>
         <p className="text-sm font-semibold text-foreground">No items found</p>
         <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">
-          We couldn't find any dishes matching your search.
+          We couldn&apos;t find any dishes matching your search.
         </p>
       </div>
     );
@@ -29,9 +29,18 @@ const DishGrid = ({ dishes }: Props) => {
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-      {dishes.map((item) => (
-        <DishCard key={item.id} dish={item} onAdd={() => addItem(item)} />
-      ))}
+      {dishes.map((item) => {
+        const cartEntry = items.find((i) => i.item.id === item.id);
+        return (
+          <DishCard
+            key={item.id}
+            dish={item}
+            quantityInCart={cartEntry?.quantity ?? 0}
+            onAdd={() => addItem(item)}
+            onDecrement={() => decrementQuantity(item)}
+          />
+        );
+      })}
     </div>
   );
 };

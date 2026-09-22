@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Order } from "@/types/Order";
 import fetchApi from "@/lib/api";
 
-export function useOrders() {
+export function useOrders(options?: { refetchInterval?: number }) {
   return useQuery({
     queryKey: ["orders"],
     queryFn: async () => {
@@ -12,5 +12,6 @@ export function useOrders() {
       return response;
     },
     staleTime: 1000 * 60,
+    refetchInterval: options?.refetchInterval,
   });
 }

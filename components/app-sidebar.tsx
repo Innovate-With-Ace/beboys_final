@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useUser } from "@clerk/nextjs"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -19,17 +20,10 @@ import {
   BoxesIcon,
   UsersIcon,
   SoupIcon,
-  CarrotIcon,
   BarChart3Icon,
-  SettingsIcon,
 } from "lucide-react"
 
 const data = {
-  user: {
-    name: "Beboy",
-    email: "beboy@example.com",
-    avatar: "/avatars/beboy.jpg",
-  },
   teams: [
     {
       name: "Beboy's Kagawad's Best Eatery",
@@ -69,15 +63,18 @@ const data = {
       url: "/admin/reports",
       icon: <BarChart3Icon />,
     },
-    {
-      title: "Settings",
-      url: "/admin/settings",
-      icon: <SettingsIcon />,
-    },
   ],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useUser()
+
+  const navUser = {
+    name: user?.fullName || user?.username || "Account",
+    email: user?.primaryEmailAddress?.emailAddress || "",
+    avatar: user?.imageUrl || "",
+  }
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -87,7 +84,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={navUser} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

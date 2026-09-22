@@ -47,7 +47,7 @@ const OrderSummaryDialog = ({
             Checkout Complete
           </h2>
           <p className="text-xs font-medium text-muted-foreground mt-1">
-            Beboy's Kagawad's Best Eatery
+            Beboy&apos;s Kagawad&apos;s Best Eatery
           </p>
         </div>
 
