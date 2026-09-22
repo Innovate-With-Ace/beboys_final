@@ -82,11 +82,9 @@ const LowStockList = () => {
 
                     <p className="text-xs text-muted-foreground">
                       <span className="font-medium text-foreground">
-                        {item.stock}
-                        {item.unit}
+                        {item.stock} {item.unit}
                       </span>{" "}
-                      left of {item.low_stock_threshold}
-                      {item.unit} threshold
+                      left of {item.low_stock_threshold} {item.unit} threshold
                     </p>
                   </div>
                 </div>
@@ -108,16 +106,12 @@ const LowStockList = () => {
       {/* --- FOOTER ACTION --- */}
       <Button
         variant="outline"
-        className="w-full mt-4 text-xs h-9 group"
+        className="w-full mt-4 text-xs h-9 group gap-1.5"
         size="sm"
+        render={<Link href="/admin/inventory" />}
       >
-        <Link
-          href="/admin/inventory"
-          className="flex items-center justify-center gap-1.5"
-        >
-          View all ingredients
-          <ArrowRight className="h-3 w-3 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-        </Link>
+        View all ingredients
+        <ArrowRight className="h-3 w-3 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
       </Button>
     </div>
   );

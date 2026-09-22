@@ -3,7 +3,6 @@
 import { useStats } from "@/hooks/useStats";
 import KpiCard from "./KPICard";
 import { PhilippinePeso, Receipt, Flame, PackageX } from "lucide-react";
-import { useOrders } from "@/hooks/useOrders";
 import { useBestSellers } from "@/hooks/useBestSellers";
 import { useLowStock } from "@/hooks/useLowStock";
 
@@ -73,6 +72,8 @@ const KpiGrid = () => {
         subtextColor={percentColor}
         icon={PhilippinePeso}
         iconColorClass="bg-success/15 text-success"
+        isLoading={isStatsLoading}
+        isError={isStatsError}
       />
 
       <KpiCard
@@ -81,9 +82,10 @@ const KpiGrid = () => {
         subtext={`Avg ₱${todaysOrderCount > 0 ? (todaysTotal / todaysOrderCount).toFixed(0) : 0}/order`}
         icon={Receipt}
         iconColorClass="bg-brand-primary/10 text-brand-primary"
+        isLoading={isStatsLoading}
+        isError={isStatsError}
       />
 
-      {/* Static placeholders for now */}
       <KpiCard
         label="Best seller"
         value={bestSeller && bestSeller.length > 0 ? bestSeller[0].name : "N/A"}
@@ -94,6 +96,8 @@ const KpiGrid = () => {
         }
         icon={Flame}
         iconColorClass="bg-brand-secondary/15 text-brand-secondary"
+        isLoading={isBestSellersLoading}
+        isError={isBestSellersError}
       />
 
       <KpiCard
@@ -102,6 +106,8 @@ const KpiGrid = () => {
         subtext={lowStock?.map((i) => i.name).join(", ") || "All stocked"}
         icon={PackageX}
         iconColorClass="bg-warning/15 text-warning"
+        isLoading={isLowStockLoading}
+        isError={isLowStockError}
       />
     </div>
   );

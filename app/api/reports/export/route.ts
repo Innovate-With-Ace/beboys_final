@@ -459,6 +459,29 @@ export async function GET(req: NextRequest) {
         altBgColor,
       );
 
+      // Stamp every page with a footer so a multi-page export doesn't
+      // read as cut off — generation timestamp on the left, page X of Y
+      // on the right.
+      const allPages = pdfDoc.getPages();
+      const generatedOn = `Generated ${new Date().toLocaleString("en-PH", { timeZone: "Asia/Manila" })}`;
+      allPages.forEach((p, i) => {
+        p.drawText(generatedOn, {
+          x: 50,
+          y: 20,
+          size: 8,
+          font,
+          color: rgb(0.55, 0.55, 0.55),
+        });
+        const pageLabel = `Page ${i + 1} of ${allPages.length}`;
+        p.drawText(pageLabel, {
+          x: PAGE_WIDTH - 50 - font.widthOfTextAtSize(pageLabel, 8),
+          y: 20,
+          size: 8,
+          font,
+          color: rgb(0.55, 0.55, 0.55),
+        });
+      });
+
       const pdfBytes = await pdfDoc.save();
 
       return new NextResponse(pdfBytes as any, {
@@ -514,13 +537,46 @@ function drawKPIBlock(
     font,
     color: rgb(0.4, 0.4, 0.4),
   });
+
+  // Shrink the value font until it fits the block, so large peso amounts
+  // don't overflow past the card's right edge.
+  const maxTextWidth = width - 30;
+  let valueSize = 20;
+  while (
+    valueSize > 11 &&
+    boldFont.widthOfTextAtSize(value, valueSize) > maxTextWidth
+  ) {
+    valueSize -= 1;
+  }
+
   page.drawText(value, {
     x: x + 15,
     y: y - 55,
-    size: 20,
+    size: valueSize,
     font: boldFont,
     color: rgb(0.1, 0.1, 0.1),
   });
+}
+
+// Truncates text with an ellipsis so it never overflows its column and
+// collides with the next one.
+function fitText(
+  text: string,
+  font: PDFFont,
+  size: number,
+  maxWidth: number,
+): string {
+  if (font.widthOfTextAtSize(text, size) <= maxWidth) return text;
+
+  const ellipsis = "...";
+  let truncated = text;
+  while (
+    truncated.length > 0 &&
+    font.widthOfTextAtSize(truncated + ellipsis, size) > maxWidth
+  ) {
+    truncated = truncated.slice(0, -1);
+  }
+  return truncated.length > 0 ? truncated + ellipsis : ellipsis;
 }
 
 function drawVerticalBarChart(
@@ -547,6 +603,11 @@ function drawVerticalBarChart(
   const barWidth = (width / data.length) * 0.7;
   const step = width / data.length;
 
+  // With many bars (e.g. a full month), an 8pt label under every single
+  // bar overlaps its neighbors — thin them out so only a readable number
+  // of labels are drawn.
+  const labelEvery = Math.max(1, Math.ceil(data.length / 15));
+
   page.drawLine({
     start: { x, y },
     end: { x: x + width, y },
@@ -572,10 +633,17 @@ function drawVerticalBarChart(
       color,
     });
 
-    page.drawText(d.label, { x: barX, y: y - 15, size: 8, font });
+    if (i % labelEvery === 0) {
+      const label = fitText(d.label, font, 8, step);
+      page.drawText(label, { x: barX, y: y - 15, size: 8, font });
+    }
 
-    const valText = d.value.toString();
-    page.drawText(valText, { x: barX, y: y + barHeight + 5, size: 8, font });
+    // Only label the bar's value when there's room for it — with many
+    // bars this text collides with the bar next to it otherwise.
+    if (barWidth >= 18) {
+      const valText = d.value.toString();
+      page.drawText(valText, { x: barX, y: y + barHeight + 5, size: 8, font });
+    }
   });
 }
 
@@ -702,10 +770,13 @@ async function drawPaginatedTable(
       let val = row[col.key];
       if (typeof val === "number") {
         val = Number.isInteger(val) ? val.toString() : val.toFixed(2);
+      } else if (val === null || val === undefined) {
+        val = "Uncategorized";
       } else {
         val = String(val);
       }
 
+      val = fitText(val, font, 10, col.width - 10);
       const textWidth = font.widthOfTextAtSize(val, 10);
       const xPos =
         col.align === "right" ? currX + col.width - textWidth : currX;

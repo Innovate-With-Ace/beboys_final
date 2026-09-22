@@ -58,16 +58,24 @@ export async function SalesByCategoryCard() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-6 my-2">
-        <div className="relative w-36 h-36 rounded-full border-8 border-primary/20 flex items-center justify-center bg-muted/10">
-          <div className="absolute inset-2 rounded-full border-8 border-blue-500/30 flex items-center justify-center" />
-          <div className="text-center">
-            <span className="text-xs text-muted-foreground block">
-              Total Mix
-            </span>
-            <span className="text-sm font-bold">100%</span>
+      <div className="flex flex-col gap-4 my-2">
+        {categories.length > 0 && (
+          <div className="w-full h-3 rounded-full overflow-hidden flex bg-muted/30">
+            {categories.map((cat, i) => {
+              const rev = Number(cat.total_revenue) || 0;
+              const sharePercent =
+                grandTotalRevenue > 0 ? (rev / grandTotalRevenue) * 100 : 0;
+              return (
+                <div
+                  key={cat.category_id || i}
+                  className={colorPalette[i % colorPalette.length]}
+                  style={{ width: `${sharePercent}%` }}
+                  title={`${cat.category_name}: ${Math.round(sharePercent)}%`}
+                />
+              );
+            })}
           </div>
-        </div>
+        )}
 
         <div className="flex flex-col gap-2 flex-1 w-full">
           {categories.length === 0 ? (

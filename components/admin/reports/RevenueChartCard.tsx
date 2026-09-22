@@ -45,7 +45,10 @@ export async function RevenueChartCard({
             Revenue Over Time
           </h3>
           <p className="text-xs text-muted-foreground">
-            Daily earnings trend for August 2026
+            Daily earnings trend{" "}
+            {startDate && endDate
+              ? `from ${startDate} to ${endDate}`
+              : "for the selected period"}
           </p>
         </div>
         <div className="p-2 rounded-lg bg-muted/40 text-muted-foreground">
@@ -68,15 +71,10 @@ export async function RevenueChartCard({
             return (
               <div
                 key={idx}
-                className="w-full bg-primary/20 hover:bg-primary/30 rounded-t transition-all relative group flex flex-col justify-end min-w-[16px]"
+                className="w-full bg-primary hover:bg-primary/80 rounded-t transition-all min-w-[16px]"
                 style={{ height: `${heightPercent}%` }}
                 title={`${item.day}: ₱${revenueNum.toLocaleString()} (${item.order_count} orders)`}
-              >
-                <div
-                  className="w-full bg-primary rounded-t"
-                  style={{ height: "60%" }}
-                />
-              </div>
+              />
             );
           })
         )}

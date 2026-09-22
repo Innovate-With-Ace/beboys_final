@@ -86,15 +86,14 @@ export async function OrderVolumeCard() {
             return (
               <div
                 key={item.hour}
-                className="w-full bg-primary/20 hover:bg-primary/40 rounded-t transition-all relative group flex flex-col justify-end min-w-[10px]"
+                className={`w-full rounded-t transition-all min-w-[10px] ${
+                  item.order_count > 0
+                    ? "bg-primary hover:bg-primary/80"
+                    : "bg-muted-foreground/15"
+                }`}
                 style={{ height: `${heightPercent}%` }}
                 title={`${formatHourLabel(item.hour)}: ${item.order_count} orders`}
-              >
-                <div
-                  className="w-full bg-primary rounded-t"
-                  style={{ height: item.order_count > 0 ? "70%" : "0%" }}
-                />
-              </div>
+              />
             );
           })}
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { Bar, BarChart, XAxis, CartesianGrid, Cell, YAxis } from "recharts";
-import { TrendingUp, CalendarDays } from "lucide-react";
+import { Trophy, CalendarDays } from "lucide-react";
 import {
   ChartConfig,
   ChartContainer,
@@ -35,15 +35,24 @@ const SalesChart = () => {
     );
   }
 
+  if (data.length === 0) {
+    return (
+      <div className="bg-bg rounded-2xl p-5 border border-border h-full flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">
+          No sales in the last 7 days
+        </p>
+      </div>
+    );
+  }
+
   const chartData = data.map((row) => ({
     day: new Date(row.day).toLocaleDateString("en-US", { weekday: "short" }),
     sales: row.total_sales,
   }));
 
   const weekTotal = chartData.reduce((sum, d) => sum + d.sales, 0);
-  const bestDay = chartData.reduce(
-    (max, d) => (d.sales > max.sales ? d : max),
-    chartData[0],
+  const bestDay = chartData.reduce((max, d) =>
+    d.sales > max.sales ? d : max,
   );
 
   return (
@@ -63,8 +72,8 @@ const SalesChart = () => {
         </div>
 
         <span className="text-xs font-semibold text-success bg-success/15 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm">
-          <TrendingUp className="h-3.5 w-3.5" />
-          +8.4%
+          <Trophy className="h-3.5 w-3.5" />
+          Best: {bestDay.day} (₱{bestDay.sales.toLocaleString()})
         </span>
       </div>
 
