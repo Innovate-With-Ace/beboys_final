@@ -12,7 +12,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { error } = await validateUser(["org:admin"]);
+    const { error, userId } = await validateUser(["org:admin"]);
     if (error) return error;
 
     const { id } = await params;
@@ -25,6 +25,18 @@ export async function PATCH(
         { error: result.error.issues[0].message },
         { status: 400 },
       );
+    }
+
+    // If stock is being changed, snapshot the previous value first so we
+    // can log it to the audit trail (stock_adjustments) after the update.
+    let previousStock: number | null = null;
+    if (result.data.stock !== undefined) {
+      const { data: existing } = await supabaseAdmin
+        .from("ingredients")
+        .select("stock")
+        .eq("id", id)
+        .single();
+      previousStock = existing?.stock ?? null;
     }
 
     // 2. Update database using the validated data
@@ -40,6 +52,23 @@ export async function PATCH(
         { error: ingredientError.message },
         { status: 400 },
       );
+    }
+
+    if (previousStock !== null && previousStock !== data.stock) {
+      const { error: auditError } = await supabaseAdmin
+        .from("stock_adjustments")
+        .insert({
+          ingredient_id: id,
+          ingredient_name: data.name,
+          change: data.stock - previousStock,
+          previous_stock: previousStock,
+          new_stock: data.stock,
+          reason: "manual_adjustment",
+          changed_by: userId,
+        });
+      if (auditError) {
+        console.error("Failed to log stock adjustment:", auditError.message);
+      }
     }
 
     return NextResponse.json(data, { status: 200 });

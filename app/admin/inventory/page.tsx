@@ -2,11 +2,19 @@
 
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Package, PackageX, AlertTriangle } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Package,
+  PackageX,
+  AlertTriangle,
+  History,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import IngredientCard from "@/components/admin/inventory/IngredientCard";
 import { useIngredientEditorStore } from "@/stores/IngredientEditorStore";
 import IngredientDialog from "@/components/admin/inventory/IngredientDialog";
+import StockAuditTrailDialog from "@/components/admin/inventory/StockAuditTrailDialog";
 import { useIngredients } from "@/hooks/useIngredients";
 
 type FilterStatus = "all" | "low" | "critical" | "in-stock";
@@ -15,6 +23,7 @@ const Page = () => {
   const openForCreate = useIngredientEditorStore((s) => s.openForCreate);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterStatus>("all");
+  const [showAuditTrail, setShowAuditTrail] = useState(false);
 
   const { data: ingredients = [], isLoading } = useIngredients();
 
@@ -73,14 +82,25 @@ const Page = () => {
           </p>
         </div>
 
-        <Button
-          onClick={openForCreate}
-          size="default"
-          className="shadow-sm font-medium gap-2 self-start sm:self-auto"
-        >
-          <Plus className="h-4 w-4 stroke-[2.5]" />
-          Add Ingredient
-        </Button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Button
+            onClick={() => setShowAuditTrail(true)}
+            variant="outline"
+            size="default"
+            className="font-medium gap-2"
+          >
+            <History className="h-4 w-4" />
+            Audit Trail
+          </Button>
+          <Button
+            onClick={openForCreate}
+            size="default"
+            className="shadow-sm font-medium gap-2"
+          >
+            <Plus className="h-4 w-4 stroke-[2.5]" />
+            Add Ingredient
+          </Button>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -198,6 +218,10 @@ const Page = () => {
 
       {/* Ingredient Editor Dialog */}
       <IngredientDialog />
+      <StockAuditTrailDialog
+        open={showAuditTrail}
+        onOpenChange={setShowAuditTrail}
+      />
     </div>
   );
 };

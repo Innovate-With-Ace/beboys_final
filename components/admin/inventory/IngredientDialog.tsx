@@ -17,9 +17,10 @@ import { useIngredientEditorStore } from "@/stores/IngredientEditorStore";
 import { useForm } from "react-hook-form";
 import { Ingredient, IngredientPayload } from "@/types/Ingredients";
 import fetchApi from "@/lib/api";
-import { AlertTriangle, Trash2, Loader2, Package } from "lucide-react";
+import { AlertTriangle, Trash2, Loader2, Package, History } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import StockAuditTrailDialog from "./StockAuditTrailDialog";
 
 const DEFAULT_VALUES: IngredientPayload = {
   name: "",
@@ -33,6 +34,7 @@ const IngredientDialog = () => {
   const queryClient = useQueryClient();
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const {
     register,
@@ -153,13 +155,27 @@ const IngredientDialog = () => {
       <DialogContent className="max-w-md bg-card border-border p-0 gap-0 overflow-hidden shadow-lg">
         {/* Header */}
         <DialogHeader className="px-6 py-5 border-b border-border/60 bg-muted/20">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-              <Package className="h-4 w-4" />
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                <Package className="h-4 w-4" />
+              </div>
+              <DialogTitle className="text-base font-bold text-foreground">
+                {selectedIngredient ? "Edit Ingredient" : "Add Ingredient"}
+              </DialogTitle>
             </div>
-            <DialogTitle className="text-base font-bold text-foreground">
-              {selectedIngredient ? "Edit Ingredient" : "Add Ingredient"}
-            </DialogTitle>
+            {selectedIngredient && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1.5 text-[11px]"
+                onClick={() => setShowHistory(true)}
+              >
+                <History className="h-3 w-3" />
+                History
+              </Button>
+            )}
           </div>
           <DialogDescription className="text-xs text-muted-foreground mt-1">
             Track {selectedIngredient ? "and update" : "a new"} raw ingredient
@@ -368,6 +384,15 @@ const IngredientDialog = () => {
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {selectedIngredient && (
+        <StockAuditTrailDialog
+          open={showHistory}
+          onOpenChange={setShowHistory}
+          ingredientId={selectedIngredient.id}
+          ingredientName={selectedIngredient.name}
+        />
+      )}
     </Dialog>
   );
 };

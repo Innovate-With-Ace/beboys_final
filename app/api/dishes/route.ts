@@ -5,7 +5,7 @@ import { NextResponse, NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { error } = await validateUser(["org:admin"]);
+    const { error, userId } = await validateUser(["org:admin"]);
 
     if (error) {
       return error;
@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
         p_category_id: dishData.category_id,
         p_is_available: dishData.is_available,
         p_ingredients: ingredients ?? [],
+        p_changed_by: userId,
       },
     );
 
@@ -58,7 +59,11 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
-    const { error } = await validateUser(["org:admin", "org:staff"]);
+    const { error } = await validateUser([
+      "org:admin",
+      "org:staff",
+      "org:customer",
+    ]);
 
     if (error) {
       return error;
