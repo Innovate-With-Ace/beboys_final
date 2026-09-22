@@ -1,8 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { Order } from "@/types/Order";
+import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { validateUser } from "@/auth-guard";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
+  const { error: authError } = await validateUser(["org:admin", "org:staff"]);
+  if (authError) return authError;
+
   const { data } = await supabaseAdmin
     .from("best_sellers_today")
     .select("*")

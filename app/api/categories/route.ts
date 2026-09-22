@@ -5,7 +5,11 @@ import { categorySchema } from "@/lib/schemas/category";
 
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await validateUser(["org:admin", "org:staff"]);
+    const { error } = await validateUser([
+      "org:admin",
+      "org:staff",
+      "org:customer",
+    ]);
 
     if (error) return error;
 

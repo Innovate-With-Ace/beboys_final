@@ -1,8 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { validateUser } from "@/auth-guard";
 
 export async function GET() {
   try {
+    const { error: authError } = await validateUser(["org:admin", "org:staff"]);
+    if (authError) return authError;
+
     // 1. Get today's date (right now)
     const today = new Date();
 

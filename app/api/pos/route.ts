@@ -5,7 +5,11 @@ import { orderInputSchema } from "@/lib/schemas/order";
 
 export async function POST(req: NextRequest) {
   try {
-    const { error, userId } = await validateUser(["org:admin", "org:staff"]);
+    const { error, userId, orgRole } = await validateUser([
+      "org:admin",
+      "org:staff",
+      "org:customer",
+    ]);
 
     if (error) {
       return error;
@@ -24,6 +28,16 @@ export async function POST(req: NextRequest) {
     }
 
     const validBody = result.data;
+
+    // create_pos_order marks source "pos" orders completed immediately
+    // (staff at the physical register already handed over the food). A
+    // customer ordering from the mobile app hasn't been served yet, so
+    // force "mobile" regardless of what they send — otherwise a customer
+    // could self-report their own order as fulfilled and skip the
+    // kitchen/staff confirmation step entirely.
+    if (orgRole === "org:customer") {
+      validBody.source = "mobile";
+    }
 
     // Order creation, order_items insert, and decrementing
     // dishes.servings_left all happen atomically inside create_pos_order
