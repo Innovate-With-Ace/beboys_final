@@ -3,6 +3,8 @@
 import React, { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import OrdersTable from "@/components/admin/orders/OrdersTable";
+import Pagination from "@/components/common/Pagination";
+import { usePagination } from "@/hooks/usePagination";
 import { useOrders } from "@/hooks/useOrders";
 import { Search, Loader2, AlertCircle } from "lucide-react";
 
@@ -43,6 +45,18 @@ const Page = () => {
     });
   }, [data, searchQuery]);
 
+  // 3. Paginate the FILTERED list
+  const {
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    totalItems,
+    totalPages,
+    pageItems,
+    resetPage,
+  } = usePagination(filteredOrders, 10);
+
   return (
     <div className="flex flex-col gap-6 pb-10">
       {/* HEADER */}
@@ -65,7 +79,10 @@ const Page = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                resetPage();
+              }}
               placeholder="Search order ID, cashier, or item..."
               className="pl-9 h-10 bg-background shadow-none border-border/60 focus-visible:ring-brand-primary"
             />
@@ -85,10 +102,23 @@ const Page = () => {
               <p className="text-sm font-medium">Failed to load orders</p>
             </div>
           ) : (
-            // Pass the newly filtered array instead of the raw data!
-            <OrdersTable orders={filteredOrders} />
+            // Only the current page of the filtered orders is rendered
+            <OrdersTable orders={pageItems} />
           )}
         </div>
+
+        {!isLoading && !isError && (
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            pageSizeOptions={[10, 20, 50]}
+            itemLabel={totalItems === 1 ? "order" : "orders"}
+          />
+        )}
       </div>
     </div>
   );

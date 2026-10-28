@@ -56,13 +56,27 @@ const OrderDetailDialog = ({ open, onOpenChange, order }: Props) => {
         method: "PATCH",
       }),
     onSuccess: (updated) => {
+      // The PATCH response has no cashier_name, so keep the one we already had
       queryClient.setQueryData<Order[]>(["orders"], (old) =>
-        old ? old.map((o) => (o.id === updated.id ? updated : o)) : [updated],
+        old
+          ? old.map((o) =>
+              o.id === updated.id
+                ? { ...o, ...updated, cashier_name: o.cashier_name }
+                : o,
+            )
+          : [updated],
       );
+      // Cancelling gives portions back to the dishes
+      if (updated.status === "cancelled") {
+        queryClient.invalidateQueries({ queryKey: ["dishes"] });
+      }
       toast.success("Order status updated successfully!");
     },
-    onError: () => {
-      toast.error("Failed to update order status. Please try again.");
+    onError: (err: Error) => {
+      toast.error(
+        err.message || "Failed to update order status. Please try again.",
+      );
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
   });
 
@@ -108,9 +122,9 @@ const OrderDetailDialog = ({ open, onOpenChange, order }: Props) => {
             Order Items
           </p>
           <div className="flex flex-col gap-3">
-            {liveOrder.items.map((item) => (
+            {liveOrder.items.map((item, idx) => (
               <div
-                key={item.dish_id}
+                key={item.id ?? `${item.dish_id}-${idx}`}
                 className="flex justify-between items-center py-1.5 border-b border-border/40 last:border-0"
               >
                 <div className="space-y-0.5">
@@ -137,9 +151,9 @@ const OrderDetailDialog = ({ open, onOpenChange, order }: Props) => {
           {/* META INFO */}
           <div className="space-y-2 bg-muted/20 p-3.5 rounded-xl border border-border/60">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-muted-foreground">Cashier ID</span>
+              <span className="text-muted-foreground">Cashier</span>
               <span className="font-medium text-foreground">
-                {liveOrder.cashier_id || "System"}
+                {liveOrder.cashier_name || "System"}
               </span>
             </div>
             <div className="flex justify-between items-center text-sm pt-2 border-t border-border/40">

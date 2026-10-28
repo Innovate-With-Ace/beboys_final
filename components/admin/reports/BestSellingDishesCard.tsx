@@ -38,45 +38,79 @@ export async function BestSellingDishesCard() {
             <Utensils className="h-4 w-4" />
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
-            <thead>
-              <tr className="border-b border-border/60 text-muted-foreground">
-                <th className="py-2.5 font-semibold">Dish Name</th>
-                <th className="py-2.5 font-semibold text-right">Sold</th>
-                <th className="py-2.5 font-semibold text-right">Revenue</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/40">
-              {dishes.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={3}
-                    className="py-4 text-center text-muted-foreground"
-                  >
-                    No data available for this period.
-                  </td>
-                </tr>
-              ) : (
-                dishes.map((dish, i) => (
-                  <tr key={dish.dish_id || i} className="hover:bg-muted/20">
-                    <td className="py-2.5 font-medium text-foreground">
+        <div className="@container">
+          {/* Narrow card: stacked rows */}
+          <div className="@md:hidden space-y-2">
+            {dishes.length === 0 ? (
+              <p className="py-4 text-center text-xs text-muted-foreground">
+                No data available for this period.
+              </p>
+            ) : (
+              dishes.map((dish, i) => (
+                <div
+                  key={dish.dish_id || i}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-background px-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
                       {dish.name}
-                    </td>
-                    <td className="py-2.5 text-right text-muted-foreground">
-                      {dish.total_sold}
-                    </td>
-                    <td className="py-2.5 text-right font-semibold text-foreground">
-                      ₱
-                      {Number(dish.total_revenue).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {dish.total_sold} sold
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold text-foreground shrink-0">
+                    ₱
+                    {Number(dish.total_revenue).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Wide card: table */}
+          <div className="hidden @md:block overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead>
+                <tr className="border-b border-border/60 text-muted-foreground">
+                  <th className="py-2.5 font-semibold">Dish Name</th>
+                  <th className="py-2.5 font-semibold text-right">Sold</th>
+                  <th className="py-2.5 font-semibold text-right">Revenue</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                {dishes.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={3}
+                      className="py-4 text-center text-muted-foreground"
+                    >
+                      No data available for this period.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  dishes.map((dish, i) => (
+                    <tr key={dish.dish_id || i} className="hover:bg-muted/20">
+                      <td className="py-2.5 font-medium text-foreground">
+                        {dish.name}
+                      </td>
+                      <td className="py-2.5 text-right text-muted-foreground">
+                        {dish.total_sold}
+                      </td>
+                      <td className="py-2.5 text-right font-semibold text-foreground">
+                        ₱
+                        {Number(dish.total_revenue).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

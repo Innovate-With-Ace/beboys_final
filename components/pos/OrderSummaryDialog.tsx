@@ -88,7 +88,7 @@ const OrderSummaryDialog = ({
           {timestamp} • Cashier: {cashierName}
         </p>
 
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <label className="text-xs font-bold text-foreground block mb-1.5 ml-1">
             Email E-Receipt (Optional)
           </label>
@@ -96,7 +96,7 @@ const OrderSummaryDialog = ({
             placeholder="customer@email.com"
             className="rounded-xl bg-bg shadow-sm border-border"
           />
-        </div>
+        </div> */}
 
         <div className="flex gap-2">
           <Button
@@ -106,9 +106,9 @@ const OrderSummaryDialog = ({
           >
             New Order
           </Button>
-          <Button className="flex-1 rounded-xl font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-md">
+          {/* <Button className="flex-1 rounded-xl font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-md">
             Send Receipt
-          </Button>
+          </Button> */}
         </div>
       </DialogContent>
     </Dialog>

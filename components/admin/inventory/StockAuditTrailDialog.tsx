@@ -13,6 +13,8 @@ import { History, ArrowUp, ArrowDown } from "lucide-react";
 const reasonLabels: Record<string, string> = {
   manual_adjustment: "Manual edit",
   dish_batch_deduction: "Batch cooked",
+  restock: "Restock",
+  usage: "Daily usage",
 };
 
 interface StockAuditTrailDialogProps {
@@ -60,24 +62,68 @@ export default function StockAuditTrailDialog({
               No stock changes recorded yet.
             </div>
           ) : (
-            <table className="w-full text-xs text-left">
-              <thead className="sticky top-0 bg-card">
-                <tr className="border-b border-border/60 text-muted-foreground">
-                  <th className="py-2.5 px-6 font-semibold">Ingredient</th>
-                  <th className="py-2.5 font-semibold">Change</th>
-                  <th className="py-2.5 font-semibold">Reason</th>
-                  <th className="py-2.5 px-6 font-semibold text-right">When</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
+            <>
+              {/* ============ TABLE (sm and up) ============ */}
+              <table className="hidden sm:table w-full text-xs text-left">
+                <thead className="sticky top-0 bg-card">
+                  <tr className="border-b border-border/60 text-muted-foreground">
+                    <th className="py-2.5 px-6 font-semibold">Ingredient</th>
+                    <th className="py-2.5 font-semibold">Change</th>
+                    <th className="py-2.5 font-semibold">Reason</th>
+                    <th className="py-2.5 px-6 font-semibold text-right">
+                      When
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {adjustments.map((adj) => (
+                    <tr key={adj.id} className="hover:bg-muted/20">
+                      <td className="py-2.5 px-6 font-medium text-foreground">
+                        {adj.ingredient_name}
+                      </td>
+                      <td className="py-2.5">
+                        <span
+                          className={`inline-flex items-center gap-1 font-semibold ${
+                            adj.change >= 0
+                              ? "text-emerald-600"
+                              : "text-destructive"
+                          }`}
+                        >
+                          {adj.change >= 0 ? (
+                            <ArrowUp className="h-3 w-3" />
+                          ) : (
+                            <ArrowDown className="h-3 w-3" />
+                          )}
+                          {Math.abs(adj.change)}
+                        </span>
+                        <span className="text-muted-foreground ml-1">
+                          ({adj.previous_stock} → {adj.new_stock})
+                        </span>
+                      </td>
+                      <td className="py-2.5 text-muted-foreground">
+                        {reasonLabels[adj.reason] ?? adj.reason}
+                      </td>
+                      <td className="py-2.5 px-6 text-right text-muted-foreground">
+                        {new Date(adj.created_at).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* ============ CARDS (phones) ============ */}
+              <div className="sm:hidden p-3 space-y-2.5">
                 {adjustments.map((adj) => (
-                  <tr key={adj.id} className="hover:bg-muted/20">
-                    <td className="py-2.5 px-6 font-medium text-foreground">
-                      {adj.ingredient_name}
-                    </td>
-                    <td className="py-2.5">
+                  <div
+                    key={adj.id}
+                    className="rounded-xl border border-border/70 bg-background p-3 space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold text-foreground">
+                        {adj.ingredient_name}
+                      </span>
                       <span
-                        className={`inline-flex items-center gap-1 font-semibold ${
+                        className={`inline-flex items-center gap-1 text-sm font-semibold ${
                           adj.change >= 0
                             ? "text-emerald-600"
                             : "text-destructive"
@@ -90,20 +136,18 @@ export default function StockAuditTrailDialog({
                         )}
                         {Math.abs(adj.change)}
                       </span>
-                      <span className="text-muted-foreground ml-1">
-                        ({adj.previous_stock} → {adj.new_stock})
-                      </span>
-                    </td>
-                    <td className="py-2.5 text-muted-foreground">
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {adj.previous_stock} → {adj.new_stock} ·{" "}
                       {reasonLabels[adj.reason] ?? adj.reason}
-                    </td>
-                    <td className="py-2.5 px-6 text-right text-muted-foreground">
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
                       {new Date(adj.created_at).toLocaleString()}
-                    </td>
-                  </tr>
+                    </p>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
         </div>
       </DialogContent>

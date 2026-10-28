@@ -22,26 +22,43 @@ import {
 
 const ACTIVE_STATUSES: OrderStatus[] = ["pending", "preparing"];
 
-function useElapsedLabel(createdAt: string) {
+function formatAge(minutes: number) {
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+// Active orders get an urgency colour; finished orders stay neutral.
+function getElapsedInfo(createdAt: string, isActive: boolean) {
   const minutes = Math.max(
     0,
-    Math.round((Date.now() - new Date(createdAt).getTime()) / 60000),
+    Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000),
   );
-  const urgency =
-    minutes >= 15 ? "critical" : minutes >= 5 ? "warning" : "fresh";
-  const label = minutes === 0 ? "just now" : `${minutes}m ago`;
-  return { label, urgency };
+  const urgency = !isActive
+    ? "done"
+    : minutes >= 15
+      ? "critical"
+      : minutes >= 5
+        ? "warning"
+        : "fresh";
+  return { label: formatAge(minutes), urgency };
 }
 
 const urgencyStyles: Record<string, string> = {
   fresh: "text-emerald-600 bg-emerald-500/10",
   warning: "text-amber-600 bg-amber-500/10",
   critical: "text-destructive bg-destructive/10",
+  done: "text-muted-foreground bg-muted",
 };
 
 function OrderQueueCard({ order }: { order: Order }) {
   const queryClient = useQueryClient();
-  const { label, urgency } = useElapsedLabel(order.created_at);
+  const { label, urgency } = getElapsedInfo(
+    order.created_at,
+    ACTIVE_STATUSES.includes(order.status),
+  );
 
   const updateOrder = useMutation({
     mutationFn: (status: OrderStatus) =>
@@ -50,9 +67,20 @@ function OrderQueueCard({ order }: { order: Order }) {
         method: "PATCH",
       }),
     onSuccess: (updated) => {
+      // The PATCH response has no cashier_name, so keep the one we already had
       queryClient.setQueryData<Order[]>(["orders"], (old) =>
-        old ? old.map((o) => (o.id === updated.id ? updated : o)) : [updated],
+        old
+          ? old.map((o) =>
+              o.id === updated.id
+                ? { ...o, ...updated, cashier_name: o.cashier_name }
+                : o,
+            )
+          : [updated],
       );
+      // Cancelling gives portions back to the dishes
+      if (updated.status === "cancelled") {
+        queryClient.invalidateQueries({ queryKey: ["dishes"] });
+      }
       toast.success(
         updated.status === "completed"
           ? "Order completed"
@@ -61,13 +89,14 @@ function OrderQueueCard({ order }: { order: Order }) {
             : "Order cancelled",
       );
     },
-    onError: () => toast.error("Failed to update order. Please try again."),
+    onError: (err: Error) => {
+      toast.error(err.message || "Failed to update order. Please try again.");
+      // Someone else may have changed it — pull the latest state
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
   });
 
-  const total = order.items.reduce(
-    (sum, i) => sum + i.price * i.quantity,
-    0,
-  );
+  const total = order.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   return (
     <div className="rounded-2xl border border-border/70 bg-card shadow-sm overflow-hidden flex flex-col">
@@ -89,9 +118,9 @@ function OrderQueueCard({ order }: { order: Order }) {
       </div>
 
       <div className="p-4 flex-1 space-y-2">
-        {order.items.map((item) => (
+        {order.items.map((item, idx) => (
           <div
-            key={item.dish_id}
+            key={item.id ?? `${item.dish_id}-${idx}`}
             className="flex items-center justify-between text-sm"
           >
             <span className="text-foreground">
@@ -107,9 +136,7 @@ function OrderQueueCard({ order }: { order: Order }) {
 
       <div className="px-4 py-2.5 border-t border-dashed border-border/60 flex items-center justify-between text-sm">
         <span className="text-muted-foreground">Total</span>
-        <span className="font-bold text-foreground">
-          ₱{total.toFixed(2)}
-        </span>
+        <span className="font-bold text-foreground">₱{total.toFixed(2)}</span>
       </div>
 
       <div className="p-3 pt-0 flex items-center gap-2">
@@ -174,12 +201,25 @@ export default function PosOrdersPage() {
   const { data = [], isLoading } = useOrders({ refetchInterval: 15000 });
   const [showHistory, setShowHistory] = useState(false);
 
+  // Kitchen queue: oldest order first
   const pending = useMemo(
-    () => data.filter((o) => o.status === "pending"),
+    () =>
+      data
+        .filter((o) => o.status === "pending")
+        .sort(
+          (a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+        ),
     [data],
   );
   const preparing = useMemo(
-    () => data.filter((o) => o.status === "preparing"),
+    () =>
+      data
+        .filter((o) => o.status === "preparing")
+        .sort(
+          (a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+        ),
     [data],
   );
   const history = useMemo(

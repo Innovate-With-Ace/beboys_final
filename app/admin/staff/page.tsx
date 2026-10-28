@@ -135,6 +135,91 @@ export default function StaffManagementPage() {
       .toUpperCase();
   };
 
+  // ---- shared pieces used by BOTH the table and the mobile cards ----
+  const renderAvatar = (member: StaffMember) => (
+    <Avatar>
+      <AvatarImage src={member.avatarUrl} alt={member.name || member.email} />
+      <AvatarFallback>{getInitials(member.name, member.email)}</AvatarFallback>
+    </Avatar>
+  );
+
+  const renderName = (member: StaffMember) => (
+    <span className="font-medium truncate">
+      {member.name || (
+        <span className="text-muted-foreground italic">Invited User</span>
+      )}
+    </span>
+  );
+
+  const renderRoleBadge = (member: StaffMember) => (
+    <Badge
+      variant={member.role === "Admin" ? "default" : "secondary"}
+      className="capitalize"
+    >
+      {member.role === "Admin" && <Shield className="mr-1 h-3 w-3" />}
+      {member.role}
+    </Badge>
+  );
+
+  const renderStatusBadge = (member: StaffMember) => (
+    <Badge
+      variant={member.status === "Active" ? "outline" : "secondary"}
+      className={
+        member.status === "Active"
+          ? "border-green-500 text-green-600 bg-green-50"
+          : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
+      }
+    >
+      {member.status}
+    </Badge>
+  );
+
+  const renderActions = (member: StaffMember) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" className="h-8 w-8 p-0" />}
+      >
+        <span className="sr-only">Open menu</span>
+        <MoreHorizontal className="h-4 w-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+
+          {member.userID && (
+            <DropdownMenuItem
+              onClick={() =>
+                handleChangeRole(
+                  member.userID,
+                  member.role === "Admin" ? "Staff" : "Admin",
+                )
+              }
+            >
+              <Shield className="mr-2 h-4 w-4" />
+              Make {member.role === "Admin" ? "Staff" : "Admin"}
+            </DropdownMenuItem>
+          )}
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive focus:bg-destructive/10"
+            onClick={() =>
+              handleRemove(
+                member.userID ? member.userID : member.id,
+                member.userID ? "delete" : "revoke",
+              )
+            }
+          >
+            <Trash className="mr-2 h-4 w-4" />
+            {member.userID ? "Remove User" : "Revoke Invitation"}
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <div className="flex-1 space-y-6">
       <div className="flex items-center justify-between space-y-2">
@@ -152,201 +237,166 @@ export default function StaffManagementPage() {
         </Button>
       </div>
 
-      <div className="rounded-md border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Staff Member</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-20"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {staffIsLoading ? (
-              Array.from({ length: 3 }).map((_, idx) => (
-                <TableRow key={idx}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-37.5" />
-                        <Skeleton className="h-3 w-20" />
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-5 w-15 rounded-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-5 w-17.5 rounded-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-8 w-8 rounded-md" />
-                  </TableCell>
+      {staffIsLoading ? (
+        <>
+          {/* Desktop skeleton */}
+          <div className="hidden lg:block rounded-md border bg-card">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Staff Member</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-20"></TableHead>
                 </TableRow>
-              ))
-            ) : staffIsError ? (
-              <TableRow>
-                <TableCell colSpan={4} className="h-64 text-center">
-                  <div className="flex flex-col items-center justify-center space-y-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-                      <AlertCircle className="h-6 w-6" />
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="text-base font-semibold">
-                        Failed to load staff
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Could not retrieve team members at this time.
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        queryClient.invalidateQueries({ queryKey: ["staffs"] })
-                      }
-                      className="mt-2"
-                    >
-                      Try Again
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : !staffData || staffData.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="h-64 text-center">
-                  <div className="flex flex-col items-center justify-center space-y-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                      <Users className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="text-base font-semibold">
-                        No staff members yet
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        You haven&apos;t added anyone to your team.
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsInviteDialogOpen(true)}
-                      className="mt-4"
-                    >
-                      <Plus className="mr-2 h-4 w-4" /> Invite your first team
-                      member
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              staffData.map((member) => (
-                <TableRow key={member.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage
-                          src={member.avatarUrl}
-                          alt={member.name || member.email}
-                        />
-                        <AvatarFallback>
-                          {getInitials(member.name, member.email)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                        <span className="font-medium">
-                          {member.name || (
-                            <span className="text-muted-foreground italic">
-                              Invited User
-                            </span>
-                          )}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {member.email}
-                        </span>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 3 }).map((_, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-37.5" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        member.role === "Admin" ? "default" : "secondary"
-                      }
-                      className="capitalize"
-                    >
-                      {member.role === "Admin" && (
-                        <Shield className="mr-1 h-3 w-3" />
-                      )}
-                      {member.role}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        member.status === "Active" ? "outline" : "secondary"
-                      }
-                      className={
-                        member.status === "Active"
-                          ? "border-green-500 text-green-600 bg-green-50"
-                          : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
-                      }
-                    >
-                      {member.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuGroup>
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-15 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-17.5 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
 
-                          {member.userID && (
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleChangeRole(
-                                  member.userID,
-                                  member.role === "Admin" ? "Staff" : "Admin",
-                                )
-                              }
-                            >
-                              <Shield className="mr-2 h-4 w-4" />
-                              Make {member.role === "Admin" ? "Staff" : "Admin"}
-                            </DropdownMenuItem>
-                          )}
-
-                          <DropdownMenuSeparator />
-
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                            onClick={() =>
-                              handleRemove(
-                                member.userID ? member.userID : member.id,
-                                member.userID ? "delete" : "revoke",
-                              )
-                            }
-                          >
-                            <Trash className="mr-2 h-4 w-4" />
-                            {member.userID
-                              ? "Remove User"
-                              : "Revoke Invitation"}
-                          </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+          {/* Mobile skeleton */}
+          <div className="lg:hidden space-y-3">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="rounded-xl border bg-card p-4 flex items-center gap-3"
+              >
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-44" />
+                </div>
+                <Skeleton className="h-8 w-8 rounded-md" />
+              </div>
+            ))}
+          </div>
+        </>
+      ) : staffIsError ? (
+        <div className="rounded-md border bg-card h-64 flex flex-col items-center justify-center space-y-3 text-center px-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+            <AlertCircle className="h-6 w-6" />
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-base font-semibold">Failed to load staff</h4>
+            <p className="text-sm text-muted-foreground">
+              Could not retrieve team members at this time.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() =>
+              queryClient.invalidateQueries({ queryKey: ["staffs"] })
+            }
+            className="mt-2"
+          >
+            Try Again
+          </Button>
+        </div>
+      ) : !staffData || staffData.length === 0 ? (
+        <div className="rounded-md border bg-card h-64 flex flex-col items-center justify-center space-y-3 text-center px-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+            <Users className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-base font-semibold">No staff members yet</h4>
+            <p className="text-sm text-muted-foreground">
+              You haven&apos;t added anyone to your team.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setIsInviteDialogOpen(true)}
+            className="mt-4"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Invite your first team member
+          </Button>
+        </div>
+      ) : (
+        <>
+          {/* ================= DESKTOP: TABLE (lg and up) ================= */}
+          <div className="hidden lg:block rounded-md border bg-card">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Staff Member</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-20"></TableHead>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {staffData.map((member) => (
+                  <TableRow key={member.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        {renderAvatar(member)}
+                        <div className="flex flex-col">
+                          {renderName(member)}
+                          <span className="text-sm text-muted-foreground">
+                            {member.email}
+                          </span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{renderRoleBadge(member)}</TableCell>
+                    <TableCell>{renderStatusBadge(member)}</TableCell>
+                    <TableCell>{renderActions(member)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* ============== MOBILE / TABLET: CARDS (below lg) ============== */}
+          <div className="lg:hidden space-y-3">
+            {staffData.map((member) => (
+              <div
+                key={member.id}
+                className="rounded-xl border bg-card p-4 shadow-2xs space-y-3"
+              >
+                <div className="flex items-center gap-3">
+                  {renderAvatar(member)}
+                  <div className="flex flex-col min-w-0 flex-1">
+                    {renderName(member)}
+                    <span className="text-sm text-muted-foreground truncate">
+                      {member.email}
+                    </span>
+                  </div>
+                  {renderActions(member)}
+                </div>
+
+                <div className="flex items-center gap-2 pt-3 border-t border-dashed border-border/60">
+                  {renderRoleBadge(member)}
+                  {renderStatusBadge(member)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <InviteStaffDialog
         open={isInviteDialogOpen}

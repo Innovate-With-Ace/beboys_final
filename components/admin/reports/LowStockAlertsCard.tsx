@@ -30,35 +30,66 @@ export async function LowStockAlertsCard() {
             <AlertTriangle className="h-4 w-4" />
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
-            <thead>
-              <tr className="border-b border-border/60 text-muted-foreground">
-                <th className="py-2.5 font-semibold">Ingredient Name</th>
-                <th className="py-2.5 font-semibold text-center">
-                  Current Stock
-                </th>
-                <th className="py-2.5 font-semibold text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/40">
-              {lowStockItems.map((item, i) => (
-                <tr key={i} className="hover:bg-muted/20">
-                  <td className="py-2.5 font-medium text-foreground">
-                    {item.name}
-                  </td>
-                  <td className="py-2.5 text-center text-muted-foreground">
-                    {item.stock} {item.unit}
-                  </td>
-                  <td className="py-2.5 text-right">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-destructive/10 text-destructive border border-destructive/20">
-                      Low Stock
-                    </span>
-                  </td>
+        <div className="@container">
+          {/* Narrow card: stacked rows */}
+          <div className="@md:hidden space-y-2">
+            {lowStockItems.length === 0 ? (
+              <p className="py-4 text-center text-xs text-muted-foreground">
+                All ingredients are well stocked.
+              </p>
+            ) : (
+              lowStockItems.map((item, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-background px-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {item.name}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {item.stock} {item.unit} left
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-destructive/10 text-destructive border border-destructive/20 shrink-0">
+                    Low Stock
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Wide card: table */}
+          <div className="hidden @md:block overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead>
+                <tr className="border-b border-border/60 text-muted-foreground">
+                  <th className="py-2.5 font-semibold">Ingredient Name</th>
+                  <th className="py-2.5 font-semibold text-center">
+                    Current Stock
+                  </th>
+                  <th className="py-2.5 font-semibold text-right">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                {lowStockItems.map((item, i) => (
+                  <tr key={i} className="hover:bg-muted/20">
+                    <td className="py-2.5 font-medium text-foreground">
+                      {item.name}
+                    </td>
+                    <td className="py-2.5 text-center text-muted-foreground">
+                      {item.stock} {item.unit}
+                    </td>
+                    <td className="py-2.5 text-right">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-destructive/10 text-destructive border border-destructive/20">
+                        Low Stock
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
       <div className="mt-4 pt-3 border-t border-border/40 text-xs text-muted-foreground">

@@ -5,6 +5,7 @@ import DishGrid from "@/components/admin/dishes/DishGrid";
 import DishTable from "@/components/admin/dishes/DishTable";
 import { RecipeBuilder } from "@/components/admin/dishes/RecipeBuilder";
 import TableCartTabs from "@/components/admin/dishes/TableCartTabs";
+import Pagination from "@/components/common/Pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { useCategories } from "@/hooks/useCategories";
 import { useDishes } from "@/hooks/useDishes";
 import { useIngredients } from "@/hooks/useIngredients";
+import { usePagination } from "@/hooks/usePagination";
 import fetchApi from "@/lib/api";
 import { useDishEditorStore } from "@/stores/DishEditorStore";
 import { Categories } from "@/types/Categories";
@@ -31,11 +33,13 @@ import {
   Loader2,
   Plus,
   Search,
+  SearchX,
   Trash2,
   UtensilsCrossed,
+  X,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -59,6 +63,8 @@ type RecipeRow = {
 const Page = () => {
   const { isOpen, close, selectedDish, openForCreate } = useDishEditorStore();
   const [layout, setLayout] = useState<"grid" | "table">("grid");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategoryId, setFilterCategoryId] = useState<string>("");
   const queryClient = useQueryClient();
 
   const { control, handleSubmit, reset } = useForm<DishFormValues>({
@@ -178,7 +184,44 @@ const Page = () => {
 
   const { data: ingredients, isLoading: ingredientsLoading } = useIngredients();
 
-  const [filterCategoryId, setFilterCategoryId] = useState<string>("");
+  // If the selected filter category was deleted, fall back to "All Categories"
+  const activeCategoryId = categories?.some((c) => c.id === filterCategoryId)
+    ? filterCategoryId
+    : "";
+
+  // Search (by name) + category filter
+  const filteredDishes = useMemo(() => {
+    if (!dishes) return [];
+    const query = searchQuery.trim().toLowerCase();
+
+    return dishes.filter((dish) => {
+      const matchesSearch = !query || dish.name.toLowerCase().includes(query);
+      const matchesCategory =
+        !activeCategoryId || dish.category_id === activeCategoryId;
+      return matchesSearch && matchesCategory;
+    });
+  }, [dishes, searchQuery, activeCategoryId]);
+
+  // Pagination runs on the FILTERED list
+  const {
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    totalItems,
+    totalPages,
+    pageItems,
+    resetPage,
+  } = usePagination(filteredDishes, 12);
+
+  const hasActiveFilters = searchQuery.trim() !== "" || activeCategoryId !== "";
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setFilterCategoryId("");
+    resetPage();
+  };
+
   const [recipeRows, setRecipeRows] = useState<RecipeRow[]>([]);
 
   useEffect(() => {
@@ -289,9 +332,27 @@ const Page = () => {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              resetPage();
+            }}
             placeholder="Search dishes by name..."
-            className="pl-9 h-10 bg-card border-border/80 focus-visible:ring-primary/20 shadow-xs"
+            className="pl-9 pr-9 h-10 bg-card border-border/80 focus-visible:ring-primary/20 shadow-xs"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                resetPage();
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-2.5">
@@ -299,8 +360,11 @@ const Page = () => {
             <CategoriesSelect
               showAllOption
               disable={categoryIsLoading}
-              selectedCategoryId={filterCategoryId}
-              onSelectCategory={setFilterCategoryId}
+              selectedCategoryId={activeCategoryId}
+              onSelectCategory={(id) => {
+                setFilterCategoryId(id);
+                resetPage();
+              }}
               categories={categories}
               onAddCategory={(label) => createCategory.mutateAsync({ label })}
               onRenameCategory={(id, label) =>
@@ -349,10 +413,42 @@ const Page = () => {
               Create First Dish
             </Button>
           </div>
-        ) : layout === "grid" ? (
-          <DishGrid dishes={dishes} />
+        ) : filteredDishes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center border border-dashed border-border rounded-2xl py-16 px-4 bg-muted/10 text-center">
+            <div className="p-3 bg-muted rounded-full mb-3 text-muted-foreground">
+              <SearchX className="h-6 w-6" />
+            </div>
+            <h3 className="text-base font-semibold text-foreground">
+              No matching dishes
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-sm mt-1 mb-4">
+              Nothing matches your current search or category filter.
+            </p>
+            {hasActiveFilters && (
+              <Button onClick={clearFilters} variant="outline" size="sm">
+                Clear filters
+              </Button>
+            )}
+          </div>
         ) : (
-          <DishTable dishes={dishes} />
+          <div className="space-y-4">
+            {layout === "grid" ? (
+              <DishGrid dishes={pageItems} />
+            ) : (
+              <DishTable dishes={pageItems} totalItems={totalItems} />
+            )}
+
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              pageSizeOptions={[12, 24, 48]}
+              itemLabel={totalItems === 1 ? "dish" : "dishes"}
+            />
+          </div>
         )}
 
         {/* Drawer Sheet */}
