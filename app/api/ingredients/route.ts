@@ -5,7 +5,11 @@ import { ingredientSchema } from "@/lib/schemas/ingredient";
 
 export async function GET() {
   try {
-    const { error } = await validateUser(["org:admin", "org:staff"]);
+    const { error } = await validateUser([
+      "org:admin",
+      "org:staff",
+      "org:customer",
+    ]);
 
     if (error) return error;
 
